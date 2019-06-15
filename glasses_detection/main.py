@@ -36,6 +36,7 @@ while(True):
         for (ex, ey, ew, eh) in eyes:#右目検出
             cv2.rectangle(img_eye, (ex, ey), (ex + ew, ey + eh), (0, 255, 255), 1)
 
+
     cv2.imshow('frame',frame)
     if cv2.waitKey(10) == 27:
         break
