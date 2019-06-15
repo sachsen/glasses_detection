@@ -1,20 +1,26 @@
 import  cv2
 HAAR_FILE="haarcascade_frontalface_default.xml"
 HAAR_FILE2="haarcascade_eye.xml"
+HAAR_FILE3="haarcascade_eye_tree_eyeglasses.xml"
 cascade=cv2.CascadeClassifier(HAAR_FILE)
 eye_cascade=cv2.CascadeClassifier(HAAR_FILE2)
+eyeglasses_cascade=cv2.CascadeClassifier(HAAR_FILE3)
 capture = cv2.VideoCapture(0)
 while(True):
     ret, frame = capture.read()
     img_g = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    face = eye_cascade.detectMultiScale(img_g)
+    face = cascade.detectMultiScale(img_g)
     for (x, y, w, h) in face:
         frame = cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 1)
         img_eye_gray = img_g[y:y + h, x:x + w]
         img_eye = frame[y:y + h, x:x + w]
-        eyes = cascade.detectMultiScale(img_eye_gray)
+
+        eyes = eye_cascade.detectMultiScale(img_eye_gray)
         for (ex, ey, ew, eh) in eyes:
-            frame=cv2.rectangle(img_eye, (ex, ey), (ex + ew, ey + eh), (0, 255, 0), 1)
+            cv2.rectangle(img_eye, (ex, ey), (ex + ew, ey + eh), (0, 255, 0), 1)
+        glasses = eyeglasses_cascade.detectMultiScale(img_eye_gray)
+        for (ex, ey, ew, eh) in glasses:
+            cv2.rectangle(img_eye, (ex, ey), (ex + ew, ey + eh), (255, 0, 0), 1)
 
 
     cv2.imshow('frame',frame)
