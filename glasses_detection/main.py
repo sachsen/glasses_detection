@@ -9,12 +9,12 @@ while(True):
     img_g = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     face = eye_cascade.detectMultiScale(img_g)
     for (x, y, w, h) in face:
-        frame = cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 1)
+        frame = cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 1)
         img_eye_gray = img_g[y:y + h, x:x + w]
-        frame = frame[y:y + h, x:x + w]
+        img_eye = frame[y:y + h, x:x + w]
         eyes = cascade.detectMultiScale(img_eye_gray)
         for (ex, ey, ew, eh) in eyes:
-            frame=cv2.rectangle(frame, (ex, ey), (ex + ew, ey + eh), (0, 255, 0), 1)
+            frame=cv2.rectangle(img_eye, (ex, ey), (ex + ew, ey + eh), (0, 255, 0), 1)
 
 
     cv2.imshow('frame',frame)
