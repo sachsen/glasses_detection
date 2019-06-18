@@ -39,7 +39,7 @@ def main():
                     leftEyeDistances[eyePoints.index(leftEyePos)] += maxDistance
 
                     # 片目ごとに2番目に距離の短い目に置き換え、その合計距離の短い方を選択
-                    if (rightEyeDistances[rightEyePos.index(rightEyePos)] + min(leftEyeDistances)) < (leftEyeDistances[leftEyePos.index(leftEyePos)] + min(rightEyeDistances)):
+                    if (rightEyeDistances[eyePoints.index(rightEyePos)] + min(leftEyeDistances)) < (leftEyeDistances[eyePoints.index(leftEyePos)] + min(rightEyeDistances)):
                         leftEyePos = eyePoints[leftEyeDistances.index(min(leftEyeDistances))]
                     else:
                         rightEyePos = eyePoints[rightEyeDistances.index(min(rightEyeDistances))]
