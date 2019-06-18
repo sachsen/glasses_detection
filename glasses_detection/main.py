@@ -23,9 +23,29 @@ def main():
                 cv2.rectangle(img_eye, (ex, ey), (ex + ew, ey + eh), (0, 255, 0), 1)
             
             # 検出した目が2個以上なら
-            # TODO: 3個以上の目を検出したときに、その中から2個を選ぶ処理を追加する
             if len(eyes) >= 2:
-                if detectGlasses(img_eye_gray, (eyes[0][0] + eyes[0][2]/2, eyes[0][1] + eyes[0][3]/2), (eyes[1][0] + eyes[1][2]/2, eyes[1][1] + eyes[1][3]/2)):
+                # 目の座標・右目距離・左目距離を計算
+                eyePoints, rightEyeDistances, leftEyeDistances = getEyePointsAndDistances(eyes, (int(w/4), int(h/4)), (int(w*3/4), int(h/4)))
+
+                # 左右の目に最も近い目を決定
+                rightEyePos = eyePoints[rightEyeDistances.index(min(rightEyeDistances))]
+                leftEyePos = eyePoints[leftEyeDistances.index(min(leftEyeDistances))]
+
+                # 同じ目を指していたら
+                if rightEyePos is leftEyePos:
+                    # 既存の最小距離を最大距離に変更
+                    maxDistance = max(max(rightEyeDistances), max(leftEyeDistances))
+                    rightEyeDistances[rightEyePos.index(rightEyePos)] += maxDistance
+                    leftEyeDistances[leftEyePos.index(leftEyePos)] += maxDistance
+
+                    # 片目ごとに2番目に距離の短い目に置き換え、その合計距離の短い方を選択
+                    if (rightEyeDistances[rightEyePos.index(rightEyePos)] + min(leftEyeDistances)) < (leftEyeDistances[leftEyePos.index(leftEyePos)] + min(rightEyeDistances)):
+                        rightEyePos = eyePoints[rightEyeDistances.index(min(rightEyeDistances))]
+                    else:
+                        leftEyePos = eyePoints[leftEyeDistances.index(min(leftEyeDistances))]
+
+                # めがね検出
+                if detectGlasses(img_eye_gray, rightEyePos, leftEyePos):
                     cv2.putText(img_eye, "GLASSES", (0, h), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
                 else:
                     cv2.putText(img_eye, "NOT GLASSES", (0, h), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
@@ -40,10 +60,39 @@ def main():
     cv2.destroyAllWindows()
 
 
+def getEyePointsAndDistances(eyes, rightEyePos, LeftEyePos):
+    """
+    目の座標・右目距離・左目距離を返す。
+
+    eyes : 目の座標のタプル
+    rightEyePos : 右目の座標
+    LeftEyePos : 左目の座標
+
+    return 目の座標・右目距離・左目距離（それぞれがリスト）
+    """
+    points = []
+    rightEyeDistances = []
+    leftEyeDistances = []
+    for (x, y, w, h) in eyes:
+        point = (int(x + w/2), int(y + h/2))
+        points.append(point)
+        rightEyeDistances.append(getDistance2(point, rightEyePos))
+        leftEyeDistances.append(getDistance2(point, LeftEyePos))
+    return points, rightEyeDistances, leftEyeDistances
+
+
+def getDistance2(p1, p2):
+    """
+    2点間の距離の2乗を計算する。
+
+    p1, p2 : 点の座標のタプル (x, y)
+    """
+    return ((p1[0] - p2[0]) ** 2) + ((p1[1] - p2[1]) ** 2)
+
+
 def clip(x, min, max):
     """
     xをmin以上max以下の値にする。
-    max < min なら min が返る。
     """
     if x <= min:
         return min
@@ -87,4 +136,5 @@ def detectGlasses(img, eye1Pos, eye2Pos):
         return False
 
 
-main()
+if __name__ == '__main__':
+    main()
