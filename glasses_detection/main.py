@@ -40,9 +40,9 @@ def main():
 
                     # 片目ごとに2番目に距離の短い目に置き換え、その合計距離の短い方を選択
                     if (rightEyeDistances[rightEyePos.index(rightEyePos)] + min(leftEyeDistances)) < (leftEyeDistances[leftEyePos.index(leftEyePos)] + min(rightEyeDistances)):
-                        rightEyePos = eyePoints[rightEyeDistances.index(min(rightEyeDistances))]
-                    else:
                         leftEyePos = eyePoints[leftEyeDistances.index(min(leftEyeDistances))]
+                    else:
+                        rightEyePos = eyePoints[rightEyeDistances.index(min(rightEyeDistances))]
 
                 # めがね検出
                 if detectGlasses(img_eye_gray, rightEyePos, leftEyePos):
