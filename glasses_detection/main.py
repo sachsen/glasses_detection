@@ -19,9 +19,7 @@ def main():
             img_eye_gray = img_g[y:y + h, x:x + w]
             img_eye = frame[y:y + h, x:x + w]
             eyes = eye_cascade.detectMultiScale(img_eye_gray)
-            for (ex, ey, ew, eh) in eyes:
-                cv2.rectangle(img_eye, (ex, ey), (ex + ew, ey + eh), (0, 255, 0), 1)
-            
+
             # 検出した目が2個以上なら
             if len(eyes) >= 2:
                 # 目の座標・右目距離・左目距離を計算
@@ -45,10 +43,14 @@ def main():
                         rightEyePos = eyePoints[rightEyeDistances.index(min(rightEyeDistances))]
 
                 # めがね検出
-                if detectGlasses(img_eye_gray, rightEyePos, leftEyePos):
+                if detectGlasses(img_eye_gray, rightEyePos, leftEyePos, img_eye):
                     cv2.putText(img_eye, "GLASSES", (0, h), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
                 else:
                     cv2.putText(img_eye, "NOT GLASSES", (0, h), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
+            
+            for (ex, ey, ew, eh) in eyes:
+                cv2.rectangle(img_eye, (ex, ey), (ex + ew, ey + eh), (0, 255, 0), 1)
+            
 
 
 
@@ -101,12 +103,13 @@ def clip(x, min, max):
     return x
 
 
-def detectGlasses(img, eye1Pos, eye2Pos):
+def detectGlasses(img, eye1Pos, eye2Pos, debugImg = None):
     """
     めがねが存在するか判定する。
 
     img : 顔画像（グレースケール）
     eyeXPos : X個目の目の座標のタプル (x, y)
+    debugImg : デバッグ情報を書く画像（省略可）
 
     return True / False
     """
@@ -116,6 +119,8 @@ def detectGlasses(img, eye1Pos, eye2Pos):
 
     # 目のX方向の距離を計算
     eyeDistance = abs(eye1Pos[0] - eye2Pos[0])
+    if eyeDistance < min(img.shape[0], img.shape[1])/20:
+        eyeDistance = int(min(img.shape[0], img.shape[1])/20)
 
     # 画像の2値化
     ret, img_2 = cv2.threshold(img, 0, 255, cv2.THRESH_OTSU)
@@ -129,6 +134,14 @@ def detectGlasses(img, eye1Pos, eye2Pos):
 
     # 平均の明るさを計算
     average = np.mean(img_betweenEyes)
+
+    # デバッグ用
+    if debugImg is not None:
+        debugImg[:, :, 0] = img_2
+        debugImg[:, :, 1] = img_2
+        debugImg[:, :, 2] = img_2
+        cv2.line(debugImg, eye1Pos, eye2Pos, (255, 0, 0), 2, cv2.LINE_AA)
+        cv2.rectangle(debugImg, (x1, y1), (x2, y2), (255, 0, 0), 1)
 
     if average >= GLASSES_THRESHOLD:
         return True
