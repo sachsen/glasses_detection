@@ -35,8 +35,8 @@ def main():
                 if rightEyePos is leftEyePos:
                     # 既存の最小距離を最大距離に変更
                     maxDistance = max(max(rightEyeDistances), max(leftEyeDistances))
-                    rightEyeDistances[rightEyePos.index(rightEyePos)] += maxDistance
-                    leftEyeDistances[leftEyePos.index(leftEyePos)] += maxDistance
+                    rightEyeDistances[eyePoints.index(rightEyePos)] += maxDistance
+                    leftEyeDistances[eyePoints.index(leftEyePos)] += maxDistance
 
                     # 片目ごとに2番目に距離の短い目に置き換え、その合計距離の短い方を選択
                     if (rightEyeDistances[rightEyePos.index(rightEyePos)] + min(leftEyeDistances)) < (leftEyeDistances[leftEyePos.index(leftEyePos)] + min(rightEyeDistances)):
