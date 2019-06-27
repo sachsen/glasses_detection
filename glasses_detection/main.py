@@ -1,7 +1,7 @@
 import numpy as np
 import  cv2
 
-GLASSES_THRESHOLD = 0.5
+GLASSES_THRESHOLD = 204
 HAAR_FILE="haarcascade_frontalface_default.xml"
 HAAR_FILE2="haarcascade_eye.xml"
 cascade=cv2.CascadeClassifier(HAAR_FILE)
