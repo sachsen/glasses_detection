@@ -14,8 +14,7 @@ def main():
         img_g = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         face = cascade.detectMultiScale(img_g)
         for (x, y, w, h) in face:
-            frame = cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255),
-                                  1)
+            frame = cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 1)
             img_eye_gray = img_g[y:y + h, x:x + w]
             img_eye = frame[y:y + h, x:x + w]
             eyes = eye_cascade.detectMultiScale(img_eye_gray)
@@ -23,54 +22,39 @@ def main():
             # 検出した目が2個以上なら
             if len(eyes) >= 2:
                 # 目の座標・右目距離・左目距離を計算
-                eyePoints, rightEyeDistances, leftEyeDistances = getEyePointsAndDistances(
-                    eyes, (int(w / 4), int(h / 4)),
-                    (int(w * 3 / 4), int(h / 4)))
+                eyePoints, rightEyeDistances, leftEyeDistances = getEyePointsAndDistances(eyes, (int(w/4), int(h/4)), (int(w*3/4), int(h/4)))
 
                 # 左右の目に最も近い目を決定
-                rightEyePos = eyePoints[rightEyeDistances.index(
-                    min(rightEyeDistances))]
-                leftEyePos = eyePoints[leftEyeDistances.index(
-                    min(leftEyeDistances))]
+                rightEyePos = eyePoints[rightEyeDistances.index(min(rightEyeDistances))]
+                leftEyePos = eyePoints[leftEyeDistances.index(min(leftEyeDistances))]
 
                 # 同じ目を指していたら
                 if rightEyePos is leftEyePos:
                     # 既存の最小距離を最大距離に変更
-                    maxDistance = max(max(rightEyeDistances),
-                                      max(leftEyeDistances))
-                    rightEyeDistances[eyePoints.index(
-                        rightEyePos)] += maxDistance
-                    leftEyeDistances[eyePoints.index(
-                        leftEyePos)] += maxDistance
+                    maxDistance = max(max(rightEyeDistances), max(leftEyeDistances))
+                    rightEyeDistances[eyePoints.index(rightEyePos)] += maxDistance
+                    leftEyeDistances[eyePoints.index(leftEyePos)] += maxDistance
 
                     # 片目ごとに2番目に距離の短い目に置き換え、その合計距離の短い方を選択
-                    if (rightEyeDistances[eyePoints.index(rightEyePos)] +
-                            min(leftEyeDistances)) < (
-                                leftEyeDistances[eyePoints.index(leftEyePos)] +
-                                min(rightEyeDistances)):
-                        leftEyePos = eyePoints[leftEyeDistances.index(
-                            min(leftEyeDistances))]
+                    if (rightEyeDistances[eyePoints.index(rightEyePos)] + min(leftEyeDistances)) < (leftEyeDistances[eyePoints.index(leftEyePos)] + min(rightEyeDistances)):
+                        leftEyePos = eyePoints[leftEyeDistances.index(min(leftEyeDistances))]
                     else:
-                        rightEyePos = eyePoints[rightEyeDistances.index(
-                            min(rightEyeDistances))]
+                        rightEyePos = eyePoints[rightEyeDistances.index(min(rightEyeDistances))]
 
                 # めがね検出
-                if detectGlasses(img_eye_gray, rightEyePos, leftEyePos,
-                                 img_eye):
-                    cv2.putText(img_eye, "GLASSES", (0, h),
-                                cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255),
-                                2, cv2.LINE_AA)
+                if detectGlasses(img_eye_gray, rightEyePos, leftEyePos, img_eye):
+                    cv2.putText(img_eye, "GLASSES", (0, h), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
                 else:
-                    cv2.putText(img_eye, "NOT GLASSES", (0, h),
-                                cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255),
-                                2, cv2.LINE_AA)
-
+                    cv2.putText(img_eye, "NOT GLASSES", (0, h), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
+            
             for (ex, ey, ew, eh) in eyes:
-                cv2.rectangle(img_eye, (ex, ey), (ex + ew, ey + eh),
-                              (0, 255, 0), 1)
+                cv2.rectangle(img_eye, (ex, ey), (ex + ew, ey + eh), (0, 255, 0), 1)
+            
 
-        cv2.imshow('frame', frame)
-        if cv2.waitKey(10) == 27:
+
+
+        cv2.imshow('frame',frame)
+        if cv2.waitKey(1000) == 27:
             break
 
     capture.release()
@@ -104,7 +88,7 @@ def getDistance2(p1, p2):
 
     p1, p2 : 点の座標のタプル (x, y)
     """
-    return ((p1[0] - p2[0])**2) + ((p1[1] - p2[1])**2)
+    return ((p1[0] - p2[0]) ** 2) + ((p1[1] - p2[1]) ** 2)
 
 
 def clip(x, min, max):
@@ -118,7 +102,7 @@ def clip(x, min, max):
     return x
 
 
-def detectGlasses(img, eye1Pos, eye2Pos, debugImg=None):
+def detectGlasses(img, eye1Pos, eye2Pos, debugImg = None):
     """
     めがねが存在するか判定する。
 
@@ -176,7 +160,7 @@ def detectGlasses(img, eye1Pos, eye2Pos, debugImg=None):
         cv2.line(debugImg, eye1Pos, eye2Pos, (255, 0, 0), 2, cv2.LINE_AA)
         cv2.rectangle(debugImg, (x1, y1), (x2, y2), (255, 0, 0), 1)
 
-    if average >= GLASSES_THRESHOLD:
+    if average <= GLASSES_THRESHOLD:
         return True
     else:
         return False
