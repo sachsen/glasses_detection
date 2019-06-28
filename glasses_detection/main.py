@@ -164,6 +164,14 @@ def detectGlasses(img, eye1Pos, eye2Pos, debugImg = None):
         debugImg[:, :, 2] = img_2
         cv2.line(debugImg, eye1Pos, eye2Pos, (255, 0, 0), 2, cv2.LINE_AA)
         cv2.rectangle(debugImg, (x1, y1), (x2, y2), (255, 0, 0), 1)
+        hist = cv2.calcHist([img], [0], None, [256], [0, 256])
+        img_hist = np.zeros((256, 256, 3), dtype = np.uint8)
+        for i in range(256):
+            for j in range(int(256 - 256 * hist[i] / max(hist))):
+                img_hist[j][i][0] = 255
+                img_hist[j][i][1] = 255
+                img_hist[j][i][2] = 255
+        cv2.imshow("Histogram", img_hist)
 
     if average <= GLASSES_THRESHOLD:
         return True
