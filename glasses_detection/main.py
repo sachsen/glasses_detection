@@ -123,7 +123,8 @@ def detectGlasses(img, eye1Pos, eye2Pos, debugImg = None):
         eyeDistance = int(min(img.shape[0], img.shape[1])/20)
 
     # 画像の2値化
-    ret, img_2 = cv2.threshold(img, 0, 255, cv2.THRESH_OTSU)
+    img_2 = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 1)
+    #ret, img_2 = cv2.threshold(img, 0, 255, cv2.THRESH_OTSU)
 
     # 目の間周辺の画像を切り出し
     x2 = clip(int(eyeCenter[0] + eyeDistance/4), 0, img.shape[1])
@@ -143,7 +144,7 @@ def detectGlasses(img, eye1Pos, eye2Pos, debugImg = None):
         cv2.line(debugImg, eye1Pos, eye2Pos, (255, 0, 0), 2, cv2.LINE_AA)
         cv2.rectangle(debugImg, (x1, y1), (x2, y2), (255, 0, 0), 1)
 
-    if average >= GLASSES_THRESHOLD:
+    if average <= GLASSES_THRESHOLD:
         return True
     else:
         return False
