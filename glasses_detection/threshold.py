@@ -6,7 +6,15 @@ THRESHOLD_SPLIT = 10
 
 HAAR_FILE="haarcascade_frontalface_default.xml"
 HAAR_FILE2="haarcascade_eye.xml"
+HAAR_FILE3="haarcascade_eye_tree_eyeglasses.xml"
+HAAR_FILE4="haarcascade_lefteye_2splits.xml"
+HAAR_FILE5="haarcascade_righteye_2splits.xml"
+
 cascade=cv2.CascadeClassifier(HAAR_FILE)
+eye_cascade=cv2.CascadeClassifier(HAAR_FILE2)
+eyeglasses_cascade=cv2.CascadeClassifier(HAAR_FILE3)
+eye_l_cascade=cv2.CascadeClassifier(HAAR_FILE4)
+eye_r_cascade=cv2.CascadeClassifier(HAAR_FILE5)
 eye_cascade=cv2.CascadeClassifier(HAAR_FILE2)
 
 
@@ -42,14 +50,24 @@ def main():
                 faceNum += 1
 
                 frame = cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 1)
-                img_eye_gray = img_g[y:y + h, x:x + w]
+                img_eye_l_gray = img_g[y:y + int(h/2), x:x + int(w*2/4)]
+                img_eye_r_gray =img_g[y:y + int(h/2), x+int(w*2/4):x + w]
+                img_eye_gray =img_g[y:y + h, x:x + w]
                 img_eye = frame[y:y + h, x:x + w]
-                eyes = eye_cascade.detectMultiScale(img_eye_gray)
+
+                eyes_normal = eye_cascade.detectMultiScale(img_eye_gray)#どちらの目でもいいから検出？
+                eyes_glasses = eyeglasses_cascade.detectMultiScale(img_eye_gray)#眼鏡検出？のはず...
+                eyes_left = eye_l_cascade.detectMultiScale(img_eye_l_gray)#左目検出
+                #eyes_left = eye_l_cascade.detectMultiScale(img_eye_gray)
+                eyes_right = eye_r_cascade.detectMultiScale(img_eye_r_gray)#右目検出
+                #eyes_right = eye_r_cascade.detectMultiScale(img_eye_gray)
+
+                eyes_all = list(eyes_normal) + list(eyes_glasses) + list(eyes_left) + list(eyes_right)
 
                 # 検出した目が2個以上なら
-                if len(eyes) >= 2:
+                if len(eyes_all) >= 2:
                     # 目の座標・右目距離・左目距離を計算
-                    eyePoints, rightEyeDistances, leftEyeDistances = getEyePointsAndDistances(eyes, (int(w/4), int(h/4)), (int(w*3/4), int(h/4)))
+                    eyePoints, rightEyeDistances, leftEyeDistances = getEyePointsAndDistances(eyes_all, (int(w/4), int(h/4)), (int(w*3/4), int(h/4)))
 
                     # 左右の目に最も近い目を決定
                     rightEyePos = eyePoints[rightEyeDistances.index(min(rightEyeDistances))]
@@ -69,11 +87,17 @@ def main():
                             rightEyePos = eyePoints[rightEyeDistances.index(min(rightEyeDistances))]
 
                     # めがね
-                    value = int(getGlassesValue(img_eye_gray, rightEyePos, leftEyePos, img_eye))
+                    value = int(getGlassesValue(img_eye_gray, rightEyePos, leftEyePos))
                     thrshes[int(THRESHOLD_SPLIT * value / 255)] += 1
                 
-                for (ex, ey, ew, eh) in eyes:
+                for (ex, ey, ew, eh) in eyes_normal:
                     cv2.rectangle(img_eye, (ex, ey), (ex + ew, ey + eh), (0, 255, 0), 1)
+                for (ex, ey, ew, eh) in eyes_glasses:
+                    cv2.rectangle(img_eye, (ex, ey), (ex + ew, ey + eh), (255, 0, 0), 1)
+                for (ex, ey, ew, eh) in eyes_left:
+                    cv2.rectangle(img_eye, (ex, ey), (ex + ew, ey + eh), (255, 255, 0), 1)
+                for (ex, ey, ew, eh) in eyes_right:
+                    cv2.rectangle(img_eye, (ex, ey), (ex + ew, ey + eh), (0, 255, 255), 1)
                 
 
 
