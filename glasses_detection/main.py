@@ -2,7 +2,7 @@ import numpy as np
 import cv2
 GLASSES_THRESHOLD = 15
 HAAR_FILE = "haarcascade_frontalface_default.xml"
-HAAR_FILE2 = "haarcascade_eye.xml"
+HAAR_FILE2 = "haarcascade_eye_tree_eyeglasses.xml"
 cascade = cv2.CascadeClassifier(HAAR_FILE)
 eye_cascade = cv2.CascadeClassifier(HAAR_FILE2)
 capture = cv2.VideoCapture(0)
@@ -54,7 +54,7 @@ def main():
 
 
         cv2.imshow('frame',frame)
-        if cv2.waitKey(1000) == 27:
+        if cv2.waitKey(10) == 27:
             break
 
     capture.release()
@@ -122,7 +122,8 @@ def detectGlasses(img, eye1Pos, eye2Pos, debugImg = None):
         eyeDistance = int(min(img.shape[0], img.shape[1]) / 20)
 
     # 画像の2値化
-
+    img_3= cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 1)
+    img = cv2.addWeighted(img, 0.95, img_3, 0.05, 0)
     img_2 = cv2.Canny(img, 50, 200)
     lines = cv2.HoughLines(img_2, 1, np.pi / 180, 100)
     if lines is None:
@@ -160,7 +161,7 @@ def detectGlasses(img, eye1Pos, eye2Pos, debugImg = None):
         cv2.line(debugImg, eye1Pos, eye2Pos, (255, 0, 0), 2, cv2.LINE_AA)
         cv2.rectangle(debugImg, (x1, y1), (x2, y2), (255, 0, 0), 1)
 
-    if average <= GLASSES_THRESHOLD:
+    if average >= GLASSES_THRESHOLD:
         return True
     else:
         return False
