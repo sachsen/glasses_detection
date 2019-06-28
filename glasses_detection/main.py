@@ -125,22 +125,17 @@ def detectGlasses(img, eye1Pos, eye2Pos, debugImg = None):
     img_3= cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 1)
     img = cv2.addWeighted(img, 0.95, img_3, 0.05, 0)
     img_2 = cv2.Canny(img, 50, 200)
-    lines = cv2.HoughLines(img_2, 1, np.pi / 180, 100)
-    if lines is None:
+
+    # 円検出
+
+    circle = cv2.HoughCircles(img_2, cv2.HOUGH_GRADIENT, dp=1, minDist=1, param1=20, param2=35, minRadius=1,
+                              maxRadius=300)  # (,,精度(基本１),円と円の中心間の距離の最小値,,canny関係のパラメータ1,2,最小半径,最大半径)。戻り値は中心座標x,y,半径
+    if circle is None:
         pass
     else:
-        for i in lines[:]:
-            rho = i[0][0]  # ρ
-            theta = i[0][1]  # Θ
-            a = np.cos(theta)
-            b = np.sin(theta)
-            x0 = rho * a
-            y0 = rho * b
-            x1 = int(x0 + 1000 * (-b))  # 1000は画像サイズより十分に大きな値
-            y1 = int(y0 + 1000 * (a))  # 始点
-            x2 = int(x0 - 1000 * (-b))  # 終点
-            y2 = int(y0 - 1000 * (a))
-            cv2.line(img_2, (x1, y1), (x2, y2), (255, 255, 255), 1)
+        for i in circle[0]:
+            cv2.circle(img_2, (i[0], i[1]), i[2], (0, 255, 0))
+
 
     # 目の間周辺の画像を切り出し
     x2 = clip(int(eyeCenter[0] + eyeDistance), 0, img.shape[1])
