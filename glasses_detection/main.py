@@ -1,6 +1,5 @@
 import numpy as np
 import cv2
-
 GLASSES_THRESHOLD = 15
 HAAR_FILE = "haarcascade_frontalface_default.xml"
 HAAR_FILE2 = "haarcascade_eye.xml"
@@ -71,7 +70,7 @@ def main():
                               (0, 255, 0), 1)
 
         cv2.imshow('frame', frame)
-        if cv2.waitKey(1000) == 27:
+        if cv2.waitKey(10) == 27:
             break
 
     capture.release()
@@ -139,7 +138,24 @@ def detectGlasses(img, eye1Pos, eye2Pos, debugImg=None):
         eyeDistance = int(min(img.shape[0], img.shape[1]) / 20)
 
     # 画像の2値化
+
     img_2 = cv2.Canny(img, 50, 200)
+    lines = cv2.HoughLines(img_2, 1, np.pi / 180, 100)
+    if lines is None:
+        pass
+    else:
+        for i in lines[:]:
+            rho = i[0][0]  # ρ
+            theta = i[0][1]  # Θ
+            a = np.cos(theta)
+            b = np.sin(theta)
+            x0 = rho * a
+            y0 = rho * b
+            x1 = int(x0 + 1000 * (-b))  # 1000は画像サイズより十分に大きな値
+            y1 = int(y0 + 1000 * (a))  # 始点
+            x2 = int(x0 - 1000 * (-b))  # 終点
+            y2 = int(y0 - 1000 * (a))
+            cv2.line(img_2, (x1, y1), (x2, y2), (255, 255, 255), 1)
 
     # 目の間周辺の画像を切り出し
     x2 = clip(int(eyeCenter[0] + eyeDistance), 0, img.shape[1])
