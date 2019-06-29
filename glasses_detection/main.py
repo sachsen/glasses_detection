@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 GLASSES_THRESHOLD = 15
+BLUE_CUT_GLASSES_THRESHOLD = 50
 HAAR_FILE = "haarcascade_frontalface_default.xml"
 HAAR_FILE2 = "haarcascade_eye_tree_eyeglasses.xml"
 cascade = cv2.CascadeClassifier(HAAR_FILE)
@@ -11,6 +12,8 @@ capture = cv2.VideoCapture(0)
 def main():
     while (True):
         ret, frame = capture.read()
+        processed=prepareDetection(frame)
+        frame=processed
         img_g = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         face = cascade.detectMultiScale(img_g)
         for (x, y, w, h) in face:
@@ -46,7 +49,8 @@ def main():
                     cv2.putText(img_eye, "GLASSES", (0, h), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
                 else:
                     cv2.putText(img_eye, "NOT GLASSES", (0, h), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
-            
+            elif detectBluelightCutGlasses(img_eye)>BLUE_CUT_GLASSES_THRESHOLD:
+                cv2.putText(img_eye, "Bluelight Cut Glasses", (0, 25), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
             for (ex, ey, ew, eh) in eyes:
                 cv2.rectangle(img_eye, (ex, ey), (ex + ew, ey + eh), (0, 255, 0), 1)
             
@@ -60,6 +64,38 @@ def main():
     capture.release()
     cv2.destroyAllWindows()
 
+def prepareDetection(img):
+    img_g = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    img_3 = cv2.adaptiveThreshold(img_g, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 155, 1)
+
+    img_3_3=cv2.cvtColor(img_3, cv2.COLOR_GRAY2BGR)
+    img_3_3 = cv2.GaussianBlur(img_3_3, (11, 11), 12)
+    img_diff = cv2.absdiff(img, img_3_3)
+    img_diff[np.where((img_diff == [255,255,255]).all(axis=2))] = [240/2,221/2,195/2]
+    img = cv2.addWeighted(img, 0.95, img_diff, 0.05, 3)  # 画像合成
+    # img=cv2.add(img,img_diff)
+
+    return  img
+def detectBluelightCutGlasses(img):
+
+    lower = np.array([50, 0, 0])
+    upper = np.array([255, 90, 90])
+    frame_mask = cv2.inRange(img, lower, upper)
+
+    '''#以下は青い部分を透過する処理
+    
+    frame_mask = cv2.GaussianBlur(frame_mask, (21, 21), 2)
+    frame_mask = cv2.bitwise_not(frame_mask)
+    
+    bgr = cv2.split(img)
+    img = cv2.merge(bgr + [frame_mask])
+
+    img = cv2.bitwise_and(img, img, mask=frame_mask)
+    
+    return img
+    '''
+    average = np.mean(frame_mask)
+    return average
 
 def getEyePointsAndDistances(eyes, rightEyePos, LeftEyePos):
     """
@@ -122,20 +158,12 @@ def detectGlasses(img, eye1Pos, eye2Pos, debugImg = None):
         eyeDistance = int(min(img.shape[0], img.shape[1]) / 20)
 
     # 画像の2値化
-    img_3= cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 5)
-    img = cv2.addWeighted(img, 0.80, img_3, 0.20, 0)#画像合成
+
+
     img_2 = cv2.Canny(img, 50, 200)
 
     # 円検出
 
-    '''circle = cv2.HoughCircles(img_2, cv2.HOUGH_GRADIENT, dp=1, minDist=1, param1=20, param2=35, minRadius=1,
-                              maxRadius=300)  # (,,精度(基本１),円と円の中心間の距離の最小値,,canny関係のパラメータ1,2,最小半径,最大半径)。戻り値は中心座標x,y,半径
-    if circle is None:
-        pass
-    else:
-        for i in circle[0]:
-            cv2.circle(img_2, (i[0], i[1]), i[2], (0, 255, 0))
-'''
 
     # 目の間周辺の画像を切り出し
     x2 = clip(int(eyeCenter[0] + eyeDistance), 0, img.shape[1])
