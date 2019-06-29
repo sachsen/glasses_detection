@@ -128,14 +128,14 @@ def detectGlasses(img, eye1Pos, eye2Pos, debugImg = None):
 
     # 円検出
 
-    circle = cv2.HoughCircles(img_2, cv2.HOUGH_GRADIENT, dp=1, minDist=1, param1=20, param2=35, minRadius=1,
+    '''circle = cv2.HoughCircles(img_2, cv2.HOUGH_GRADIENT, dp=1, minDist=1, param1=20, param2=35, minRadius=1,
                               maxRadius=300)  # (,,精度(基本１),円と円の中心間の距離の最小値,,canny関係のパラメータ1,2,最小半径,最大半径)。戻り値は中心座標x,y,半径
     if circle is None:
         pass
     else:
         for i in circle[0]:
             cv2.circle(img_2, (i[0], i[1]), i[2], (0, 255, 0))
-
+'''
 
     # 目の間周辺の画像を切り出し
     x2 = clip(int(eyeCenter[0] + eyeDistance), 0, img.shape[1])
