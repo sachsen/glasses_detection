@@ -162,9 +162,6 @@ def detectGlasses(img, eye1Pos, eye2Pos, debugImg = None):
 
     img_2 = cv2.Canny(img, 50, 200)
 
-    # 円検出
-
-
     # 目の間周辺の画像を切り出し
     x2 = clip(int(eyeCenter[0] + eyeDistance), 0, img.shape[1])
     x1 = clip(int(eyeCenter[0] - eyeDistance), 0, img.shape[1])
