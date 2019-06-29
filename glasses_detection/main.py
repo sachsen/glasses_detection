@@ -122,8 +122,8 @@ def detectGlasses(img, eye1Pos, eye2Pos, debugImg = None):
         eyeDistance = int(min(img.shape[0], img.shape[1]) / 20)
 
     # 画像の2値化
-    img_3= cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 1)
-    img = cv2.addWeighted(img, 0.95, img_3, 0.05, 0)
+    img_3= cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 5)
+    img = cv2.addWeighted(img, 0.80, img_3, 0.20, 0)#画像合成
     img_2 = cv2.Canny(img, 50, 200)
 
     # 円検出
