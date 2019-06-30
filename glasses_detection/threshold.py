@@ -173,8 +173,17 @@ def getGlassesValue(img, eye1Pos, eye2Pos, debugImg = None):
     if eyeDistance < min(img.shape[0], img.shape[1])/20:
         eyeDistance = int(min(img.shape[0], img.shape[1])/20)
 
+    # 左右2分割
+    split_x = int(eyeCenter[0])
+    img_leftFace = img[0 : img.shape[0], 0 : split_x]
+    img_rightFace = img[0 : img.shape[0], split_x : img.shape[1]]
+
     # 画像の2値化
-    ret, img_2 = cv2.threshold(img, 0, 255, cv2.THRESH_OTSU)
+    ret, img_leftFace_2 = cv2.threshold(img_leftFace, 0, 255, cv2.THRESH_OTSU)
+    ret, img_rightFace_2 = cv2.threshold(img_rightFace, 0, 255, cv2.THRESH_OTSU)
+
+    #　分割した画像を連結
+    img_2 = cv2.hconcat([img_leftFace_2, img_rightFace_2])
 
     # 目の間周辺の画像を切り出し
     x2 = clip(int(eyeCenter[0] + eyeDistance/4), 0, img.shape[1])
