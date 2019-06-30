@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
-GLASSES_THRESHOLD = 15
-BLUE_CUT_GLASSES_THRESHOLD = 50
+GLASSES_THRESHOLD = 10
+BLUE_CUT_GLASSES_THRESHOLD = 9
 HAAR_FILE = "haarcascade_frontalface_default.xml"
 HAAR_FILE2 = "haarcascade_eye_tree_eyeglasses.xml"
 cascade = cv2.CascadeClassifier(HAAR_FILE)
@@ -20,6 +20,8 @@ def main():
             frame = cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 1)
             img_eye_gray = img_g[y:y + h, x:x + w]
             img_eye = frame[y:y + h, x:x + w]
+            img_upper_face=frame[y:y + int(h/2), x:x + w]
+            blue= detectBluelightCutGlasses(img_upper_face)
             eyes = eye_cascade.detectMultiScale(img_eye_gray)
 
             # 検出した目が2個以上なら
@@ -49,8 +51,9 @@ def main():
                     cv2.putText(img_eye, "GLASSES", (0, h), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
                 else:
                     cv2.putText(img_eye, "NOT GLASSES", (0, h), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
-            elif detectBluelightCutGlasses(img_eye)>BLUE_CUT_GLASSES_THRESHOLD:
-                cv2.putText(img_eye, "Bluelight Cut Glasses", (0, 25), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+            elif blue>BLUE_CUT_GLASSES_THRESHOLD:
+
+                cv2.putText(img_upper_face, "Bluelight Cut Glasses", (0, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
             for (ex, ey, ew, eh) in eyes:
                 cv2.rectangle(img_eye, (ex, ey), (ex + ew, ey + eh), (0, 255, 0), 1)
             
@@ -77,23 +80,13 @@ def prepareDetection(img):
 
     return  img
 def detectBluelightCutGlasses(img):
-
-    lower = np.array([50, 0, 0])
-    upper = np.array([255, 90, 90])
+    # 青い眼鏡、青い髪、青い入れ墨等は誤認識します。
+    #青色の範囲をHSVで指定して収集(frame_mask)
+    img=cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
+    lower = np.array([75, 60, 60])
+    upper = np.array([135, 100, 100])
     frame_mask = cv2.inRange(img, lower, upper)
 
-    '''#以下は青い部分を透過する処理
-    
-    frame_mask = cv2.GaussianBlur(frame_mask, (21, 21), 2)
-    frame_mask = cv2.bitwise_not(frame_mask)
-    
-    bgr = cv2.split(img)
-    img = cv2.merge(bgr + [frame_mask])
-
-    img = cv2.bitwise_and(img, img, mask=frame_mask)
-    
-    return img
-    '''
     average = np.mean(frame_mask)
     return average
 
