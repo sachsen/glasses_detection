@@ -1,7 +1,9 @@
 import numpy as np
 import cv2
 GLASSES_THRESHOLD = 8
-BLUE_CUT_GLASSES_THRESHOLD = 9
+BLUE_CUT_GLASSES_THRESHOLD = 10
+BLUE_CUT_GLASSES_THRESHOLD2 = 5
+#正面を向いた時、ブルーライトの検出率が悪くなるので、２つ目を検出した時の閾値を別に用意している。
 HAAR_FILE = "haarcascade_frontalface_default.xml"
 HAAR_FILE2 = "haarcascade_eye_tree_eyeglasses.xml"
 cascade = cv2.CascadeClassifier(HAAR_FILE)
@@ -20,9 +22,9 @@ def main():
             frame = cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 1)
             img_eye_gray = img_g[y:y + h, x:x + w]
             img_eye = frame[y:y + h, x:x + w]
-            img_upper_face=frame[y:y + int(h/2), x:x + w]
-            blue= detectBluelightCutGlasses(img_upper_face)
-            print(blue)
+            img_upper_face=frame[y+int(h/4):y + int(h/2), x+int(w/10):x + int(w/10*9)]
+            blue= detectBluelightCutGlasses(img_upper_face,10,60)
+            #print(blue)
             eyes = eye_cascade.detectMultiScale(img_eye_gray)
 
             # 検出した目が2個以上なら
@@ -46,9 +48,8 @@ def main():
                         leftEyePos = eyePoints[leftEyeDistances.index(min(leftEyeDistances))]
                     else:
                         rightEyePos = eyePoints[rightEyeDistances.index(min(rightEyeDistances))]
-
                 # めがね検出
-                if detectGlasses(eyes,img_eye_gray, rightEyePos, leftEyePos, img_eye):
+                if detectGlasses(eyes,img_eye_gray,img_eye, rightEyePos, leftEyePos, img_eye):
                     cv2.putText(img_eye, "GLASSES", (0, h), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
                 else:
                     cv2.putText(img_eye, "NOT GLASSES", (0, h), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
@@ -74,21 +75,22 @@ def prepareDetection(img):
 
     img_3_3=cv2.cvtColor(img_3, cv2.COLOR_GRAY2BGR)
     img_3_3 = cv2.GaussianBlur(img_3_3, (11, 11), 12)
-    img_diff = cv2.absdiff(img, img_3_3)
-    img_diff[np.where((img_diff == [255,255,255]).all(axis=2))] = [240/2,221/2,195/2]
+    img_diff = cv2.absdiff(img, img_3_3)#差分計算
+    img_diff[np.where((img_diff == [255,255,255]).all(axis=2))] = [240/2,221/2,195/2]#色の塗りつぶし(色の変換)
     img = cv2.addWeighted(img, 0.95, img_diff, 0.05, 3)  # 画像合成
     # img=cv2.add(img,img_diff)
 
     return  img
-def detectBluelightCutGlasses(img):
+def detectBluelightCutGlasses(img,s,v):#svはhsvのsv
     # 青い眼鏡、青い髪、青い入れ墨等は誤認識します。
     #青色の範囲をHSVで指定して収集(frame_mask)
     img=cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
-    lower = np.array([75, 40, 40])
+    lower = np.array([75, s, v])
     upper = np.array([135, 100, 100])
     frame_mask = cv2.inRange(img, lower, upper)
-
     average = np.mean(frame_mask)
+
+    cv2.imshow("a",frame_mask)#確認用
     return average
 
 def getEyePointsAndDistances(eyes, rightEyePos, LeftEyePos):
@@ -132,7 +134,7 @@ def clip(x, min, max):
     return x
 
 
-def detectGlasses(eyes,img, eye1Pos, eye2Pos, debugImg = None):
+def detectGlasses(eyes,img,img_color, eye1Pos, eye2Pos, debugImg = None):
     """
     めがねが存在するか判定する。
 
@@ -164,16 +166,26 @@ def detectGlasses(eyes,img, eye1Pos, eye2Pos, debugImg = None):
     y1 = clip(int(eyeCenter[1] - eyeDistance / 2), 0, img.shape[0])
     y2 = clip(int(eyeCenter[1] + eyeDistance / 2), 0, img.shape[0])
     img_betweenEyes = img_2[y1:y2, x1:x2]
+    img_betweenEyes_color = img_color[y1:y2, x1:x2]
 
+    #ブルーライトカット眼鏡検出2
+    blue = detectBluelightCutGlasses(img_betweenEyes_color, 0, 15)
+    print(str(blue) + "blue")
+    if blue > BLUE_CUT_GLASSES_THRESHOLD2:
+        cv2.putText(img_color, "Bluelight Cut Glasses", (0, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
+                    (255, 255, 255), 2, cv2.LINE_AA)
     # 平均の明るさを計算
     average = np.mean(img_betweenEyes)
     print(average)
 
     # デバッグ用
     if debugImg is not None:
-        debugImg[:, :, 0] = img_2
+        img_2=cv2.cvtColor(img_2,cv2.COLOR_GRAY2BGR)
+        debugImg=cv2.addWeighted(img_2,0.5,img_color,0.5,3)
+        '''debugImg[:, :, 0] = img_2
         debugImg[:, :, 1] = img_2
-        debugImg[:, :, 2] = img_2
+        debugImg[:, :, 2] = img_2'''
+
         cv2.line(debugImg, eye1Pos, eye2Pos, (255, 0, 0), 2, cv2.LINE_AA)
         cv2.rectangle(debugImg, (x1, y1), (x2, y2), (255, 0, 0), 1)
 
