@@ -1,6 +1,6 @@
 import numpy as np
 import cv2
-GLASSES_THRESHOLD = 8
+GLASSES_THRESHOLD = 5
 BLUE_CUT_GLASSES_THRESHOLD = 10
 BLUE_CUT_GLASSES_THRESHOLD2 = 5
 #正面を向いた時、ブルーライトの検出率が悪くなるので、２つ目を検出した時の閾値を別に用意している。
@@ -22,8 +22,8 @@ def main():
             frame = cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 1)
             img_eye_gray = img_g[y:y + h, x:x + w]
             img_eye = frame[y:y + h, x:x + w]
-            img_upper_face=frame[y+int(h/4):y + int(h/2), x+int(w/10):x + int(w/10*9)]
-            blue= detectBluelightCutGlasses(img_upper_face,10,60)
+            img_upper_face=frame[y+int(h/4):y + int(h/2), x+int(w/11*2):x + int(w/11*9)]
+            blue= detectBluelightCutGlasses(img_upper_face,frame,10,10)
             #print(blue)
             eyes = eye_cascade.detectMultiScale(img_eye_gray)
 
@@ -58,9 +58,6 @@ def main():
                 cv2.putText(img_upper_face, "Bluelight Cut Glasses", (0, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
             for (ex, ey, ew, eh) in eyes:
                 cv2.rectangle(img_eye, (ex, ey), (ex + ew, ey + eh), (0, 255, 0), 1)
-            
-
-
 
         cv2.imshow('frame',frame)
         if cv2.waitKey(10) == 27:
@@ -81,16 +78,24 @@ def prepareDetection(img):
     # img=cv2.add(img,img_diff)
 
     return  img
-def detectBluelightCutGlasses(img,s,v):#svはhsvのsv
+def detectBluelightCutGlasses(img,img_face,s,v):#svはhsvのsv
     # 青い眼鏡、青い髪、青い入れ墨等は誤認識します。
     #青色の範囲をHSVで指定して収集(frame_mask)
-    img=cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
+
+    img_face = cv2.cvtColor(img_face, cv2.COLOR_BGR2HSV)
     lower = np.array([75, s, v])
+    upper = np.array([135, 100, 100])
+    frame_mask2 = cv2.inRange(img_face, lower, upper)
+    average2 = np.mean(frame_mask2)
+
+    img=cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
+    lower = np.array([75, s+int(average2), v+int(average2)])
     upper = np.array([135, 100, 100])
     frame_mask = cv2.inRange(img, lower, upper)
     average = np.mean(frame_mask)
 
-    cv2.imshow("a",frame_mask)#確認用
+
+    cv2.imshow("bluelight",frame_mask)#確認用
     return average
 
 def getEyePointsAndDistances(eyes, rightEyePos, LeftEyePos):
@@ -157,9 +162,18 @@ def detectGlasses(eyes,img,img_color, eye1Pos, eye2Pos, debugImg = None):
 
 
     img_2 = cv2.Canny(img, 50, 200)
+    cv2.imshow("img_2",img_2)
     for (ex, ey, ew, eh) in eyes:#目の辺りを黒塗りにして差をつける
         img_2 = cv2.rectangle(img_2, (ex, ey), (ex + ew, ey + eh), (0, 0, 0), cv2.FILLED)
 
+    # 目の周辺を切り出し2
+    x4 = clip(int(eyeCenter[0] + eyeDistance/4), 0, img.shape[1])
+    x3 = clip(int(eyeCenter[0] - eyeDistance/4), 0, img.shape[1])
+    y3 = clip(int(eyeCenter[1] - eyeDistance ), 0, img.shape[0])
+    y4 = clip(int(eyeCenter[1] + eyeDistance ), 0, img.shape[0])
+    #img_2 = cv2.rectangle(img_2, (int(img_2.shape[0]/10*4), 0), (int(img_2.shape[0]/10*6), img_2.shape[1]), (0, 0, 0), cv2.FILLED)  # 鼻の線を消したい。
+    img_2 = cv2.rectangle(img_2, (x3, y3), (x4, y4), (0, 0, 0), cv2.FILLED)
+    cv2.imshow("img_2", img_2)
     # 目の間周辺の画像を切り出し
     x2 = clip(int(eyeCenter[0] + eyeDistance), 0, img.shape[1])
     x1 = clip(int(eyeCenter[0] - eyeDistance), 0, img.shape[1])
@@ -169,7 +183,7 @@ def detectGlasses(eyes,img,img_color, eye1Pos, eye2Pos, debugImg = None):
     img_betweenEyes_color = img_color[y1:y2, x1:x2]
 
     #ブルーライトカット眼鏡検出2
-    blue = detectBluelightCutGlasses(img_betweenEyes_color, 0, 15)
+    blue = detectBluelightCutGlasses(img_betweenEyes_color,img_color, 10, 15)
     print(str(blue) + "blue")
     if blue > BLUE_CUT_GLASSES_THRESHOLD2:
         cv2.putText(img_color, "Bluelight Cut Glasses", (0, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
