@@ -155,7 +155,7 @@ def detectGlasses(eyes,img, eye1Pos, eye2Pos, debugImg = None):
 
 
     img_2 = cv2.Canny(img, 50, 200)
-    for (ex, ey, ew, eh) in eyes:
+    for (ex, ey, ew, eh) in eyes:#目の辺りを黒塗りにして差をつける
         img_2 = cv2.rectangle(img_2, (ex, ey), (ex + ew, ey + eh), (0, 0, 0), cv2.FILLED)
 
     # 目の間周辺の画像を切り出し
