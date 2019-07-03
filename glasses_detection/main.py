@@ -1,6 +1,6 @@
 import numpy as np
 import cv2
-GLASSES_THRESHOLD = 10
+GLASSES_THRESHOLD = 8
 BLUE_CUT_GLASSES_THRESHOLD = 9
 HAAR_FILE = "haarcascade_frontalface_default.xml"
 HAAR_FILE2 = "haarcascade_eye_tree_eyeglasses.xml"
@@ -22,6 +22,7 @@ def main():
             img_eye = frame[y:y + h, x:x + w]
             img_upper_face=frame[y:y + int(h/2), x:x + w]
             blue= detectBluelightCutGlasses(img_upper_face)
+            print(blue)
             eyes = eye_cascade.detectMultiScale(img_eye_gray)
 
             # 検出した目が2個以上なら
@@ -47,11 +48,11 @@ def main():
                         rightEyePos = eyePoints[rightEyeDistances.index(min(rightEyeDistances))]
 
                 # めがね検出
-                if detectGlasses(img_eye_gray, rightEyePos, leftEyePos, img_eye):
+                if detectGlasses(eyes,img_eye_gray, rightEyePos, leftEyePos, img_eye):
                     cv2.putText(img_eye, "GLASSES", (0, h), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
                 else:
                     cv2.putText(img_eye, "NOT GLASSES", (0, h), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
-            elif blue>BLUE_CUT_GLASSES_THRESHOLD:
+            if blue>BLUE_CUT_GLASSES_THRESHOLD:
 
                 cv2.putText(img_upper_face, "Bluelight Cut Glasses", (0, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
             for (ex, ey, ew, eh) in eyes:
@@ -83,7 +84,7 @@ def detectBluelightCutGlasses(img):
     # 青い眼鏡、青い髪、青い入れ墨等は誤認識します。
     #青色の範囲をHSVで指定して収集(frame_mask)
     img=cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
-    lower = np.array([75, 60, 60])
+    lower = np.array([75, 40, 40])
     upper = np.array([135, 100, 100])
     frame_mask = cv2.inRange(img, lower, upper)
 
@@ -131,7 +132,7 @@ def clip(x, min, max):
     return x
 
 
-def detectGlasses(img, eye1Pos, eye2Pos, debugImg = None):
+def detectGlasses(eyes,img, eye1Pos, eye2Pos, debugImg = None):
     """
     めがねが存在するか判定する。
 
@@ -154,6 +155,8 @@ def detectGlasses(img, eye1Pos, eye2Pos, debugImg = None):
 
 
     img_2 = cv2.Canny(img, 50, 200)
+    for (ex, ey, ew, eh) in eyes:
+        img_2 = cv2.rectangle(img_2, (ex, ey), (ex + ew, ey + eh), (0, 0, 0), cv2.FILLED)
 
     # 目の間周辺の画像を切り出し
     x2 = clip(int(eyeCenter[0] + eyeDistance), 0, img.shape[1])
@@ -178,6 +181,7 @@ def detectGlasses(img, eye1Pos, eye2Pos, debugImg = None):
         return True
     else:
         return False
+
 
 
 if __name__ == '__main__':
