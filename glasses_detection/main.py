@@ -9,11 +9,12 @@ HAAR_FILE2 = "haarcascade_eye_tree_eyeglasses.xml"
 cascade = cv2.CascadeClassifier(HAAR_FILE)
 eye_cascade = cv2.CascadeClassifier(HAAR_FILE2)
 capture = cv2.VideoCapture(0)
-
+fgbg = cv2.bgsegm.createBackgroundSubtractorMOG()
 
 def main():
     while (True):
         ret, frame = capture.read()
+        detectOutline(frame)
         processed=prepareDetection(frame)
         frame=processed
         img_g = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -210,7 +211,26 @@ def detectGlasses(eyes,img,img_color, eye1Pos, eye2Pos, debugImg = None):
         return True
     else:
         return False
+def detectOutline(frame):
+    fgmask = fgbg.apply(frame)
+    kernel = np.ones((13, 13), dtype=np.uint8)
+    for i in range(3):
+        fgmask = cv2.dilate(fgmask, kernel)  # 白が膨張
+        fgmask = cv2.morphologyEx(fgmask, cv2.MORPH_CLOSE, kernel)  # モルフォロジー演算。第二引数で方式を選択。
 
+    label,contours, hierarchy = cv2.findContours(fgmask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    for i in range(0, len(contours)):
+        if len(contours[i]) > 0:
+
+            # remove small objects
+            #if cv2.contourArea(contours[i]) < 500:
+            #    continue
+
+            #cv2.polylines(fgmask, contours[i], True, (0, 255, 255), 1)
+            fgmask = cv2.drawContours(fgmask, contours, -1, (0, 255, 0), 3)
+
+    # 参考http://lang.sist.chukyo-u.ac.jp/classes/OpenCV/py_tutorials/py_video/py_bg_subtraction/py_bg_subtraction.html
+    cv2.imshow("MOG", fgmask)
 
 
 if __name__ == '__main__':
