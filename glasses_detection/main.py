@@ -68,12 +68,15 @@ def main():
 
 def prepareDetection(img):
     img_g = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    img_3 = cv2.adaptiveThreshold(img_g, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 155, 1)
 
-    img_3_3=cv2.cvtColor(img_3, cv2.COLOR_GRAY2BGR)
+    img_3 = cv2.adaptiveThreshold(img_g, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 155, 1)
+    cv2.imshow("a", img_3)
+    img_3_3 = cv2.cvtColor(img_3, cv2.COLOR_GRAY2BGR)
     img_3_3 = cv2.GaussianBlur(img_3_3, (11, 11), 12)
-    img_diff = cv2.absdiff(img, img_3_3)#差分計算
-    img_diff[np.where((img_diff == [255,255,255]).all(axis=2))] = [240/2,221/2,195/2]#色の塗りつぶし(色の変換)
+    img_diff = cv2.absdiff(img, img_3_3)  # 差分計算
+
+    # img_diff[np.where((img_diff == [255,255,255]).all(axis=2))] = [240/2,221/2,195/2]#色の塗りつぶし(色の変換)
+
     img = cv2.addWeighted(img, 0.95, img_diff, 0.05, 3)  # 画像合成
     # img=cv2.add(img,img_diff)
 
