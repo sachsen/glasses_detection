@@ -46,7 +46,7 @@ def main():
 
             if goodEyes:
                 # めがね検出
-                if getGlassesValue(img_eye, img_eye_gray, eye1Pos, eye2Pos, 1) <= GLASSES_THRESHOLD:
+                if getGlassesValue(img_eye, img_eye_gray, eye1Pos, eye2Pos, 3) >= GLASSES_THRESHOLD:
                     #cv2.putText(img_eye, "GLASSES", (0, h), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
                     cv2.circle(frame_over, (int(x + w/2), int(y + h/2)), int(0.35*(w+h)), (0, 255, 0), thickness = int(0.05*(w+h)), lineType = cv2.LINE_AA)
                 else:
@@ -126,7 +126,10 @@ def getGlassesValue(img_c, img_g, eye1Pos, eye2Pos, debugCode = 0):
     img_c : 顔画像（カラー）
     img_g : 顔画像（グレースケール）
     eyeXPos : X個目の目の座標のタプル (x, y)
-    debugCode : 0 -> 何もしない, 1 -> デバッグ情報表示
+    debugCode : 0 -> 何もしない, != 0 -> デバッグ情報表示
+        1 -> 顔画像そのまま
+        2 -> 顔画像グレースケール
+        3 -> 顔画像2値化
 
     return めがね値
     """
@@ -145,16 +148,38 @@ def getGlassesValue(img_c, img_g, eye1Pos, eye2Pos, debugCode = 0):
     img_rightFace = img_g[0 : img_g.shape[0], split_x : img_g.shape[1]]
 
     # 左 半楕円マスク
+    # x[y] : 座標yでの楕円の線上のx座標
     x = np.array(range(img_leftFace.shape[0]))
-    x = (img_leftFace.shape[1] - img_leftFace.shape[1] * np.sqrt(1 - ((x - int(img_leftFace.shape[0]/2))/(img_leftFace.shape[0]/2))**2)).astype(np.int32)
+    x = (img_leftFace.shape[1] - img_leftFace.shape[1] * np.sqrt(1 - ((x - int(img_leftFace.shape[0] / 2)) / (img_leftFace.shape[0] / 2)) ** 2)).astype(np.int32)
+    # 楕円の外側を 0 で塗る
     for y in range(img_leftFace.shape[0]):
         img_leftFace[y, 0 : x[y]] = 0
+    # 楕円の面積
+    s = 3.14 * img_leftFace.shape[1] * img_leftFace.shape[0] / 2
+    # 楕円内部での平均
+    a = clip(int(np.sum(img_leftFace) / s), 0, 255)
+    # 楕円の外側を平均値で埋める
+    for y in range(img_leftFace.shape[0]):
+        img_leftFace[y, 0 : x[y]] = a
+    # 明るさ正規化
+    #img_leftFace = ((img_leftFace - a) / np.std(img_leftFace, ddof = img_leftFace.shape[1] * img_leftFace.shape[0] - s) * 64 + 128).astype(np.uint8)
 
     # 右 半楕円マスク
+    # x[y] : 座標yでの楕円の線上のx座標
     x = np.array(range(img_rightFace.shape[0]))
-    x = (img_rightFace.shape[1] * np.sqrt(1 - ((x - int(img_rightFace.shape[0]/2))/(img_rightFace.shape[0]/2))**2)).astype(np.int32)
+    x = (img_rightFace.shape[1] * np.sqrt(1 - ((x - int(img_rightFace.shape[0] / 2)) / (img_rightFace.shape[0] / 2)) ** 2)).astype(np.int32)
+    # 楕円の外側を 0 で塗る
     for y in range(img_rightFace.shape[0]):
         img_rightFace[y, x[y] : img_rightFace.shape[1]] = 0
+    # 楕円の面積
+    s = 3.14 * img_rightFace.shape[1] * img_rightFace.shape[0] / 2
+    # 楕円内部での平均
+    a = clip(int(np.sum(img_rightFace) / s), 0, 255)
+    # 楕円の外側を平均値で埋める
+    for y in range(img_rightFace.shape[0]):
+        img_rightFace[y, x[y] : img_rightFace.shape[1]] = a
+    # 明るさ正規化
+    #img_rightFace = ((img_rightFace - a) / np.std(img_rightFace, ddof = img_rightFace.shape[1] * img_rightFace.shape[0] - s) * 64 + 128).astype(np.uint8)
 
     # 画像の2値化
     ret, img_leftFace_2 = cv2.threshold(img_leftFace, 0, 255, cv2.THRESH_OTSU)
@@ -175,15 +200,20 @@ def getGlassesValue(img_c, img_g, eye1Pos, eye2Pos, debugCode = 0):
 
     # デバッグ用
     if debugCode != 0:
-        img_c[:, :, 0] = img_2
-        img_c[:, :, 1] = img_2
-        img_c[:, :, 2] = img_2
+        if debugCode == 2:
+            img_c[:, :, 0] = img_g
+            img_c[:, :, 1] = img_g
+            img_c[:, :, 2] = img_g
+        elif debugCode == 3:
+            img_c[:, :, 0] = img_2
+            img_c[:, :, 1] = img_2
+            img_c[:, :, 2] = img_2
         cv2.line(img_c, eye1Pos, eye2Pos, (255, 0, 0), 2, cv2.LINE_AA)
         cv2.rectangle(img_c, (x1, y1), (x2, y2), (255, 0, 0), 1)
         hist = cv2.calcHist([img_g], [0], None, [256], [0, 256])
         img_hist = np.zeros((256, 256, 3), dtype = np.uint8)
         for i in range(256):
-            for j in range(int(256 - 256 * hist[i] / max(hist))):
+            for j in range(int(256 - 256 * hist[i] / (img_g.shape[1] * img_g.shape[0] / 20))):
                 img_hist[j][i][0] = 255
                 img_hist[j][i][1] = 255
                 img_hist[j][i][2] = 255
