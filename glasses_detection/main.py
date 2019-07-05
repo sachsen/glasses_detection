@@ -213,10 +213,10 @@ def detectGlasses(eyes,img,img_color, eye1Pos, eye2Pos, debugImg = None):
         return False
 def detectOutline(frame):
     fgmask = fgbg.apply(frame)
-    kernel = np.ones((13, 13), dtype=np.uint8)
-    for i in range(3):
-        fgmask = cv2.dilate(fgmask, kernel)  # 白が膨張
-        fgmask = cv2.morphologyEx(fgmask, cv2.MORPH_CLOSE, kernel)  # モルフォロジー演算。第二引数で方式を選択。
+    kernel = np.ones((3, 3), dtype=np.uint8)
+
+    fgmask = cv2.dilate(fgmask, kernel)  # 白が膨張
+    fgmask = cv2.morphologyEx(fgmask, cv2.MORPH_CLOSE, kernel)  # モルフォロジー演算。第二引数で方式を選択。
 
     label,contours, hierarchy = cv2.findContours(fgmask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
     for i in range(0, len(contours)):
