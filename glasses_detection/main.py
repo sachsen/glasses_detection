@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 
-GLASSES_THRESHOLD = 11
+GLASSES_THRESHOLD = 14
 HAAR_FILE = "haarcascade_frontalface_default.xml"
 HAAR_FILE2 = "haarcascade_eye.xml"
 cascade = cv2.CascadeClassifier(HAAR_FILE)
@@ -138,17 +138,18 @@ def detectGlasses(img, eye1Pos, eye2Pos, debugImg=None):
     if eyeDistance < min(img.shape[0], img.shape[1]) / 20:
         eyeDistance = int(min(img.shape[0], img.shape[1]) / 20)
 
-    # 画像の明るさを正規化
-    img = ((img - np.mean(img)) / np.std(img) * 64 + 128).astype(np.uint8)
-    # 画像のエッジを求める
-    img_2 = cv2.Canny(img, 0, 255)
-
     # 目の間周辺の画像を切り出し
     x2 = clip(int(eyeCenter[0] + eyeDistance), 0, img.shape[1])
     x1 = clip(int(eyeCenter[0] - eyeDistance), 0, img.shape[1])
     y1 = clip(int(eyeCenter[1] - eyeDistance / 2), 0, img.shape[0])
     y2 = clip(int(eyeCenter[1] + eyeDistance / 2), 0, img.shape[0])
-    img_betweenEyes = img_2[y1:y2, x1:x2]
+    img_betweenEyes = img[y1:y2, x1:x2]
+
+    # 画像の明るさを正規化
+    img_betweenEyes = ((img_betweenEyes - np.mean(img_betweenEyes)) /
+                       np.std(img_betweenEyes) * 64 + 128).astype(np.uint8)
+    # 画像のエッジを求める
+    img_betweenEyes = cv2.Canny(img_betweenEyes, 50, 255)
 
     # 平均の明るさを計算
     average = np.mean(img_betweenEyes)
@@ -156,9 +157,9 @@ def detectGlasses(img, eye1Pos, eye2Pos, debugImg=None):
 
     # デバッグ用
     if debugImg is not None:
-        debugImg[:, :, 0] = img_2
-        debugImg[:, :, 1] = img_2
-        debugImg[:, :, 2] = img_2
+        debugImg[y1:y2, x1:x2, 0] = img_betweenEyes
+        debugImg[y1:y2, x1:x2, 1] = img_betweenEyes
+        debugImg[y1:y2, x1:x2, 2] = img_betweenEyes
         cv2.line(debugImg, eye1Pos, eye2Pos, (255, 0, 0), 2, cv2.LINE_AA)
         cv2.rectangle(debugImg, (x1, y1), (x2, y2), (255, 0, 0), 1)
 
