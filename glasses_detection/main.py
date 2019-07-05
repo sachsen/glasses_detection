@@ -154,8 +154,8 @@ def getGlassesValue(img_c, img_g, eye1Pos, eye2Pos, debugCode = 0):
     # 楕円の外側を 0 で塗る
     for y in range(img_leftFace.shape[0]):
         img_leftFace[y, 0 : x[y]] = 0
-    # 楕円の面積
-    s = 3.14 * img_leftFace.shape[1] * img_leftFace.shape[0] / 2
+    # 半楕円の面積
+    s = 3.14 * img_leftFace.shape[1] * img_leftFace.shape[0] / 4
     # 楕円内部での平均
     a = clip(int(np.sum(img_leftFace) / s), 0, 255)
     # 楕円の外側を平均値で埋める
@@ -171,8 +171,8 @@ def getGlassesValue(img_c, img_g, eye1Pos, eye2Pos, debugCode = 0):
     # 楕円の外側を 0 で塗る
     for y in range(img_rightFace.shape[0]):
         img_rightFace[y, x[y] : img_rightFace.shape[1]] = 0
-    # 楕円の面積
-    s = 3.14 * img_rightFace.shape[1] * img_rightFace.shape[0] / 2
+    # 半楕円の面積
+    s = 3.14 * img_rightFace.shape[1] * img_rightFace.shape[0] / 4
     # 楕円内部での平均
     a = clip(int(np.sum(img_rightFace) / s), 0, 255)
     # 楕円の外側を平均値で埋める
