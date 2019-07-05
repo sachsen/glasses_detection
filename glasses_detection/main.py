@@ -1,6 +1,6 @@
 import numpy as np
 import cv2
-GLASSES_THRESHOLD = 4
+GLASSES_THRESHOLD = 3
 BLUE_CUT_GLASSES_THRESHOLD = 10
 BLUE_CUT_GLASSES_THRESHOLD2 = 5
 #正面を向いた時、ブルーライトの検出率が悪くなるので、２つ目を検出した時の閾値を別に用意している。
@@ -175,7 +175,14 @@ def detectGlasses(eyes,img,img_color, eye1Pos, eye2Pos, debugImg = None):
 
     return True / False
     """
-
+    img_hsv = cv2.cvtColor(img_color, cv2.COLOR_BGR2HSV)
+    lower = np.array([-33/2, 0, 50])
+    upper = np.array([64/2, 100, 100])
+    frame_mask = cv2.inRange(img_hsv, lower, upper)
+    frame_mask = cv2.GaussianBlur(frame_mask, (21, 21), 12)
+    frame_mask=cv2.cvtColor(frame_mask,cv2.COLOR_GRAY2BGR)
+    img_color=cv2.addWeighted(img_color,0.9,frame_mask,0.1,3)
+    cv2.imshow("frame_mask",img_color)
     # 目の中心座標の計算
     eyeCenter = ((eye1Pos[0] + eye2Pos[0]) / 2, (eye1Pos[1] + eye2Pos[1]) / 2)
 
