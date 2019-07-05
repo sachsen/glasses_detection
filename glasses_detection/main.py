@@ -60,7 +60,7 @@ def main():
                     else:
                         #cv2.putText(img_eye, "NOT GLASSES", (0, h), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
                         s = int(0.03 * (w + h))
-                        t = int(0.03 * (w + h) * 1.4 * 1.4)
+                        t = s * 2
                         wh = int(w/2)
                         hh = int(h/2)
                         p = np.array([[x + s, y - s], [x + wh, y + hh - t], [x + w - s, y - s], [x + w + s, y + s], [x + wh + t, y + hh], [x + w + s, y + h - s], [x + w - s, y + h + s], [x + wh, y + hh + t], [x + s, y + h + s], [x - s, y + h - s], [x + wh - t, y + hh], [x - s, y + s]]).reshape(1, -1, 2)
