@@ -46,26 +46,20 @@ def main():
                 rightEyePos = eyePoints[rightEyeDistances.index(min(rightEyeDistances))]
                 leftEyePos = eyePoints[leftEyeDistances.index(min(leftEyeDistances))]
 
-            # 
-            if (0 <= rightEyePos[0] < w/2) and (0 <= rightEyePos[1] < h/2) and (w/2 <= leftEyePos[0] < w) and (0 <= leftEyePos[1] < h/2):
-                # 同じ目を指していたら
-                #if rightEyePos is leftEyePos:
-                #    # 既存の最小距離を最大距離に変更
-                #    maxDistance = max(max(rightEyeDistances), max(leftEyeDistances))
-                #    rightEyeDistances[eyePoints.index(rightEyePos)] += maxDistance
-                #    leftEyeDistances[eyePoints.index(leftEyePos)] += maxDistance
-                #
-                #    # 片目ごとに2番目に距離の短い目に置き換え、その合計距離の短い方を選択
-                #    if (rightEyeDistances[eyePoints.index(rightEyePos)] + min(leftEyeDistances)) < (leftEyeDistances[eyePoints.index(leftEyePos)] + min(rightEyeDistances)):
-                #        leftEyePos = eyePoints[leftEyeDistances.index(min(leftEyeDistances))]
-                #    else:
-                #        rightEyePos = eyePoints[rightEyeDistances.index(min(rightEyeDistances))]
+                # 右上1/4の範囲に右目が、左上1/4の範囲に左目があるなら
+                if (0 <= rightEyePos[0] < w/2) and (0 <= rightEyePos[1] < h/2) and (w/2 <= leftEyePos[0] < w) and (0 <= leftEyePos[1] < h/2):
 
-                # めがね検出
-                if detectGlasses(img_eye_gray, rightEyePos, leftEyePos, img_eye):
-                    cv2.putText(img_eye, "GLASSES", (0, h), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
-                else:
-                    cv2.putText(img_eye, "NOT GLASSES", (0, h), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
+                    # めがね検出
+                    if detectGlasses(img_eye_gray, rightEyePos, leftEyePos, img_eye):
+                        #cv2.putText(img_eye, "GLASSES", (0, h), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
+                        #cv2.circle(frame, (int(x + w/2), int(y + h/2)), int(0.35*(w+h)), (255, 255, 255), thickness = int(0.05*(w+h)), lineType = cv2.LINE_AA)
+                    else:
+                        #cv2.putText(img_eye, "NOT GLASSES", (0, h), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
+                        s = int(0.05*(w+h))
+                        wh = int(w/2)
+                        hh = int(h/2)
+                        p = np.array([[x + s, y - s], [x + wh, y + hh - s], [x + w - s, y - s], [x + w + s, y + s], [x + wh, y + hh + s], [x + w + s, y + h - s], [x + w - s, y + h + s], [x + wh, y + hh + s], [x + s, y + h + s], [x - s, y + h - s], [x + wh - s, y + hh], [x - s, y + s]]).reshape(1, -1, 2)
+                        #cv2.fillPoly(frame, p, (255, 255, 255))
             
             for (ex, ey, ew, eh) in eyes_normal:
                 cv2.rectangle(img_eye, (ex, ey), (ex + ew, ey + eh), (0, 255, 0), 1)
@@ -154,26 +148,14 @@ def detectGlasses(img, eye1Pos, eye2Pos, debugImg = None):
     # 左 半楕円マスク
     x = np.array(range(img_leftFace.shape[0]))
     x = (img_leftFace.shape[1] - img_leftFace.shape[1] * np.sqrt(1 - ((x - int(img_leftFace.shape[0]/2))/(img_leftFace.shape[0]/2))**2)).astype(np.int64)
-    c = 0
     for y in range(img_leftFace.shape[0]):
-        for i in range(x[y]):
-            img_leftFace[y, i] = c
-            if c == 255:
-                c = 0
-            else:
-                c += 1
+        img_leftFace[y, 0 : x[y]] = 0
 
     # 右 半楕円マスク
     x = np.array(range(img_rightFace.shape[0]))
     x = (img_rightFace.shape[1] * np.sqrt(1 - ((x - int(img_rightFace.shape[0]/2))/(img_rightFace.shape[0]/2))**2)).astype(np.int64)
-    c = 0
     for y in range(img_rightFace.shape[0]):
-        for i in range(x[y], img_rightFace.shape[1]):
-            img_rightFace[y, i] = c
-            if c == 255:
-                c = 0
-            else:
-                c += 1
+        img_rightFace[y, x[y] : img_rightFace.shape[1]] = 0
 
     # 画像の2値化
     ret, img_leftFace_2 = cv2.threshold(img_leftFace, 0, 255, cv2.THRESH_OTSU)
