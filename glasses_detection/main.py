@@ -46,7 +46,6 @@ def main():
             if (len(eyes))>= 2:
                 # 目の座標・右目距離・左目距離を計算
                 eyePoints, rightEyeDistances, leftEyeDistances = getEyePointsAndDistances(eyes, (int(w/4), int(h/4)), (int(w*3/4), int(h/4)))
-                print(eyePoints)
                 # 左右の目に最も近い目を決定
                 rightEyePos = eyePoints[rightEyeDistances.index(min(rightEyeDistances))]
                 leftEyePos = eyePoints[leftEyeDistances.index(min(leftEyeDistances))]
