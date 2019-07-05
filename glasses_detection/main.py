@@ -1,6 +1,6 @@
 import numpy as np
 import cv2
-GLASSES_THRESHOLD = 6
+GLASSES_THRESHOLD = 20 #PBL教室では6
 BLUE_CUT_GLASSES_THRESHOLD = 10
 BLUE_CUT_GLASSES_THRESHOLD2 = 5
 #正面を向いた時、ブルーライトの検出率が悪くなるので、２つ目を検出した時の閾値を別に用意している。
@@ -224,6 +224,13 @@ def detectGlasses(eyes,img,img_color, eye1Pos, eye2Pos, debugImg = None):
     if blue > BLUE_CUT_GLASSES_THRESHOLD2:
         cv2.putText(img_color, "Bluelight Cut Glasses", (0, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
                     (255, 255, 255), 2, cv2.LINE_AA)
+
+    # 画像の明るさを正規化
+    img_betweenEyes = ((img_betweenEyes - np.mean(img_betweenEyes)) /
+                       np.std(img_betweenEyes) * 64 + 128).astype(np.uint8)
+    # 画像のエッジを求める
+    img_betweenEyes = cv2.Canny(img_betweenEyes, 50, 255)
+
     # 平均の明るさを計算
     average = np.mean(img_betweenEyes)
     print(average)
