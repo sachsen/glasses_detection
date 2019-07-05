@@ -26,7 +26,9 @@ def main():
         face = cascade.detectMultiScale(img_g)
         for (x, y, w, h) in face:
             frame = cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 1)
-            img_eye_gray = img_g[y:y + h, x:x + w]
+            img_eye_l_gray = img_g[y:y + int(h/2), x:x + int(w*2/4)]
+            img_eye_r_gray =img_g[y:y + int(h/2), x+int(w*2/4):x + w]
+            img_eye_gray =img_g[y:y + h, x:x + w]
             img_eye = frame[y:y + h, x:x + w]
             img_upper_face=frame[y+int(h/4):y + int(h/2), x+int(w/11*2):x + int(w/11*9)]
             blue= detectBluelightCutGlasses(img_upper_face,frame,10,10)
@@ -176,7 +178,41 @@ def detectGlasses(eyes,img,img_color, eye1Pos, eye2Pos, debugImg = None):
     if eyeDistance < min(img.shape[0], img.shape[1]) / 20:
         eyeDistance = int(min(img.shape[0], img.shape[1]) / 20)
 
+    # 左右2分割
+    split_x = int(eyeCenter[0])
+    img_leftFace = img[0 : img.shape[0], 0 : split_x]
+    img_rightFace = img[0 : img.shape[0], split_x : img.shape[1]]
+
+    # 左 半楕円マスク
+    x = np.array(range(img_leftFace.shape[0]))
+    x = (img_leftFace.shape[1] - img_leftFace.shape[1] * np.sqrt(1 - ((x - int(img_leftFace.shape[0]/2))/(img_leftFace.shape[0]/2))**2)).astype(np.int64)
+    c = 0
+    for y in range(img_leftFace.shape[0]):
+        for i in range(x[y]):
+            img_leftFace[y, i] = c
+            if c == 255:
+                c = 0
+            else:
+                c += 1
+
+    # 右 半楕円マスク
+    x = np.array(range(img_rightFace.shape[0]))
+    x = (img_rightFace.shape[1] * np.sqrt(1 - ((x - int(img_rightFace.shape[0]/2))/(img_rightFace.shape[0]/2))**2)).astype(np.int64)
+    c = 0
+    for y in range(img_rightFace.shape[0]):
+        for i in range(x[y], img_rightFace.shape[1]):
+            img_rightFace[y, i] = c
+            if c == 255:
+                c = 0
+            else:
+                c += 1
+    #memo:ここら辺マージによる弊害あるかも
     # 画像の2値化
+    ret, img_leftFace_2 = cv2.threshold(img_leftFace, 0, 255, cv2.THRESH_OTSU)
+    ret, img_rightFace_2 = cv2.threshold(img_rightFace, 0, 255, cv2.THRESH_OTSU)
+
+    #　分割した画像を連結
+    img_2 = cv2.hconcat([img_leftFace_2, img_rightFace_2])
 
 
     img_2 = cv2.Canny(img, 50, 200)
@@ -220,8 +256,16 @@ def detectGlasses(eyes,img,img_color, eye1Pos, eye2Pos, debugImg = None):
 
         cv2.line(debugImg, eye1Pos, eye2Pos, (255, 0, 0), 2, cv2.LINE_AA)
         cv2.rectangle(debugImg, (x1, y1), (x2, y2), (255, 0, 0), 1)
+        hist = cv2.calcHist([img], [0], None, [256], [0, 256])
+        img_hist = np.zeros((256, 256, 3), dtype = np.uint8)
+        for i in range(256):
+            for j in range(int(256 - 256 * hist[i] / max(hist))):
+                img_hist[j][i][0] = 255
+                img_hist[j][i][1] = 255
+                img_hist[j][i][2] = 255
+        cv2.imshow("Histogram", img_hist)
 
-    if average >= GLASSES_THRESHOLD:
+    if average <= GLASSES_THRESHOLD:
         return True
     else:
         return False
