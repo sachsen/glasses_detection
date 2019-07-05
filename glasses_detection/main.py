@@ -126,14 +126,14 @@ def detectBluelightCutGlasses(img,img_face,s,v):#svはhsvのsv
 
 def getEyePointsAndDistances(eyes, rightEyePos, LeftEyePos):
     """
-    目の座標・右目距離・左目距離を返す。
+		目の座標・右目距離・左目距離を返す。
 
-    eyes : 目の座標のタプル
-    rightEyePos : 右目の座標
-    LeftEyePos : 左目の座標
+		eyes : 目の座標のタプル
+		rightEyePos : 右目の座標
+		LeftEyePos : 左目の座標
 
-    return 目の座標・右目距離・左目距離（それぞれがリスト）
-    """
+		return 目の座標・右目距離・左目距離（それぞれがリスト）
+		"""
     points = []
     rightEyeDistances = []
     leftEyeDistances = []
@@ -147,7 +147,7 @@ def getEyePointsAndDistances(eyes, rightEyePos, LeftEyePos):
 
 def getDistance2(p1, p2):
     """
-    2点間の距離の2乗を計算する。
+		2点間の距離の2乗を計算する。
 
     p1, p2 : 点の座標のタプル (x, y)
     """
@@ -156,8 +156,8 @@ def getDistance2(p1, p2):
 
 def clip(x, min, max):
     """
-    xをmin以上max以下の値にする。
-    """
+		xをmin以上max以下の値にする。
+		"""
     if x <= min:
         return min
     if x >= max:
@@ -167,11 +167,11 @@ def clip(x, min, max):
 
 def detectGlasses(eyes,img,img_color, eye1Pos, eye2Pos, debugImg = None):
     """
-    めがねが存在するか判定する。
+		めがねが存在するか判定する。
 
-    img : 顔画像（グレースケール）
-    eyeXPos : X個目の目の座標のタプル (x, y)
-    debugImg : デバッグ情報を書く画像（省略可）
+		img : 顔画像（グレースケール）
+		eyeXPos : X個目の目の座標のタプル (x, y)
+		debugImg : デバッグ情報を書く画像（省略可）
 
     return True / False
     """
@@ -191,8 +191,10 @@ def detectGlasses(eyes,img,img_color, eye1Pos, eye2Pos, debugImg = None):
     if eyeDistance < min(img.shape[0], img.shape[1]) / 20:
         eyeDistance = int(min(img.shape[0], img.shape[1]) / 20)
 
+    # 画像の明るさを正規化
+    img = ((img - np.mean(img)) / np.std(img) * 64 + 128).astype(np.uint8)
     # 画像のエッジを求める
-    img_2 = cv2.Canny(img, 50, 250)
+    img_2 = cv2.Canny(img, 0, 255)
 
     cv2.imshow("img_2",img_2)
     for (ex, ey, ew, eh) in eyes:#目の辺りを黒塗りにして差をつける
