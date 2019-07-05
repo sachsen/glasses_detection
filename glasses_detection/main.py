@@ -67,18 +67,21 @@ def main():
                 rightEyePos = eyePoints[rightEyeDistances.index(min(rightEyeDistances))]
                 leftEyePos = eyePoints[leftEyeDistances.index(min(leftEyeDistances))]
 
+            # 
+            if (0 <= rightEyePos[0] < w/2) and (0 <= rightEyePos[1] < h/2) and (w/2 <= leftEyePos[0] < w) and (0 <= leftEyePos[1] < h/2):
                 # 同じ目を指していたら
-                if rightEyePos is leftEyePos:
-                    # 既存の最小距離を最大距離に変更
-                    maxDistance = max(max(rightEyeDistances), max(leftEyeDistances))
-                    rightEyeDistances[eyePoints.index(rightEyePos)] += maxDistance
-                    leftEyeDistances[eyePoints.index(leftEyePos)] += maxDistance
+                #if rightEyePos is leftEyePos:
+                #    # 既存の最小距離を最大距離に変更
+                #    maxDistance = max(max(rightEyeDistances), max(leftEyeDistances))
+                #    rightEyeDistances[eyePoints.index(rightEyePos)] += maxDistance
+                #    leftEyeDistances[eyePoints.index(leftEyePos)] += maxDistance
+                #
+                #    # 片目ごとに2番目に距離の短い目に置き換え、その合計距離の短い方を選択
+                #    if (rightEyeDistances[eyePoints.index(rightEyePos)] + min(leftEyeDistances)) < (leftEyeDistances[eyePoints.index(leftEyePos)] + min(rightEyeDistances)):
+                #        leftEyePos = eyePoints[leftEyeDistances.index(min(leftEyeDistances))]
+                #    else:
+                #        rightEyePos = eyePoints[rightEyeDistances.index(min(rightEyeDistances))]
 
-                    # 片目ごとに2番目に距離の短い目に置き換え、その合計距離の短い方を選択
-                    if (rightEyeDistances[eyePoints.index(rightEyePos)] + min(leftEyeDistances)) < (leftEyeDistances[eyePoints.index(leftEyePos)] + min(rightEyeDistances)):
-                        leftEyePos = eyePoints[leftEyeDistances.index(min(leftEyeDistances))]
-                    else:
-                        rightEyePos = eyePoints[rightEyeDistances.index(min(rightEyeDistances))]
                 # めがね検出
                 if detectGlasses(eyes,img_eye_gray,img_eye, rightEyePos, leftEyePos, img_eye):
                     cv2.putText(img_eye, "GLASSES", (0, h), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
