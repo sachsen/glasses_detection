@@ -6,8 +6,14 @@ BLUE_CUT_GLASSES_THRESHOLD2 = 5
 #正面を向いた時、ブルーライトの検出率が悪くなるので、２つ目を検出した時の閾値を別に用意している。
 HAAR_FILE = "haarcascade_frontalface_default.xml"
 HAAR_FILE2 = "haarcascade_eye_tree_eyeglasses.xml"
+HAAR_FILE3= "haarcascade_eye.xml"
+HAAR_FILE4= "haarcascade_lefteye_2splits.xml"
+HAAR_FILE5= "haarcascade_righteye_2splits.xml"
 cascade = cv2.CascadeClassifier(HAAR_FILE)
 eye_cascade = cv2.CascadeClassifier(HAAR_FILE2)
+eye_cascade2 = cv2.CascadeClassifier(HAAR_FILE3)
+eye_cascade3 = cv2.CascadeClassifier(HAAR_FILE4)
+eye_cascade4 = cv2.CascadeClassifier(HAAR_FILE5)
 capture = cv2.VideoCapture(0)
 
 
@@ -26,12 +32,21 @@ def main():
             blue= detectBluelightCutGlasses(img_upper_face,frame,10,10)
             #print(blue)
             eyes = eye_cascade.detectMultiScale(img_eye_gray)
+            eyes2 = eye_cascade2.detectMultiScale(img_eye_gray)
+            eyes3 = eye_cascade3.detectMultiScale(img_eye_gray)
+            eyes4 = eye_cascade4.detectMultiScale(img_eye_gray)
 
+            if(len(eyes)>0 and len(eyes2)>0):
+                eyes = np.vstack((eyes, eyes2))
+            if (len(eyes) > 0 and len(eyes3) > 0):
+                eyes = np.vstack((eyes, eyes3))
+            if (len(eyes) > 0 and len(eyes4) > 0):
+                eyes = np.vstack((eyes, eyes4))
             # 検出した目が2個以上なら
-            if len(eyes) >= 2:
+            if (len(eyes))>= 2:
                 # 目の座標・右目距離・左目距離を計算
                 eyePoints, rightEyeDistances, leftEyeDistances = getEyePointsAndDistances(eyes, (int(w/4), int(h/4)), (int(w*3/4), int(h/4)))
-
+                print(eyePoints)
                 # 左右の目に最も近い目を決定
                 rightEyePos = eyePoints[rightEyeDistances.index(min(rightEyeDistances))]
                 leftEyePos = eyePoints[leftEyeDistances.index(min(leftEyeDistances))]
@@ -69,7 +84,7 @@ def main():
 def prepareDetection(img):
     img_g = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    img_3 = cv2.adaptiveThreshold(img_g, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 155, 1)
+    img_3 = cv2.adaptiveThreshold(img_g, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 155, 30)
     cv2.imshow("a", img_3)
     img_3_3 = cv2.cvtColor(img_3, cv2.COLOR_GRAY2BGR)
     img_3_3 = cv2.GaussianBlur(img_3_3, (11, 11), 12)
