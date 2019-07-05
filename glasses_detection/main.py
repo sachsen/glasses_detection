@@ -71,20 +71,20 @@ def main():
                 rightEyePos = eyePoints[rightEyeDistances.index(min(rightEyeDistances))]
                 leftEyePos = eyePoints[leftEyeDistances.index(min(leftEyeDistances))]
 
-            # 
-            if (0 <= rightEyePos[0] < w/2) and (0 <= rightEyePos[1] < h/2) and (w/2 <= leftEyePos[0] < w) and (0 <= leftEyePos[1] < h/2):
-                # めがね検出
-                if detectGlasses(eyes,img_eye_gray,img_eye, rightEyePos, leftEyePos, img_eye):
-                    #cv2.putText(img_eye, "GLASSES", (0, h), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
-                    cv2.circle(frame_over, (int(x + w/2), int(y + h/2)), int(0.35*(w+h)), (0, 255, 0), thickness = int(0.05*(w+h)), lineType = cv2.LINE_AA)
-                else:
-                    #cv2.putText(img_eye, "NOT GLASSES", (0, h), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
-                    s = int(0.03 * (w + h))
-                    t = s * 2
-                    wh = int(w/2)
-                    hh = int(h/2)
-                    p = np.array([[x + s, y - s], [x + wh, y + hh - t], [x + w - s, y - s], [x + w + s, y + s], [x + wh + t, y + hh], [x + w + s, y + h - s], [x + w - s, y + h + s], [x + wh, y + hh + t], [x + s, y + h + s], [x - s, y + h - s], [x + wh - t, y + hh], [x - s, y + s]]).reshape(1, -1, 2)
-                    cv2.fillPoly(frame_over, p, (0, 0, 255))
+                #
+                if (0 <= rightEyePos[0] < w/2) and (0 <= rightEyePos[1] < h/2) and (w/2 <= leftEyePos[0] < w) and (0 <= leftEyePos[1] < h/2):
+                    # めがね検出
+                    if detectGlasses(eyes,img_eye_gray,img_eye, rightEyePos, leftEyePos, img_eye):
+                        #cv2.putText(img_eye, "GLASSES", (0, h), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
+                        cv2.circle(frame_over, (int(x + w/2), int(y + h/2)), int(0.35*(w+h)), (0, 255, 0), thickness = int(0.05*(w+h)), lineType = cv2.LINE_AA)
+                    else:
+                        #cv2.putText(img_eye, "NOT GLASSES", (0, h), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
+                        s = int(0.03 * (w + h))
+                        t = s * 2
+                        wh = int(w/2)
+                        hh = int(h/2)
+                        p = np.array([[x + s, y - s], [x + wh, y + hh - t], [x + w - s, y - s], [x + w + s, y + s], [x + wh + t, y + hh], [x + w + s, y + h - s], [x + w - s, y + h + s], [x + wh, y + hh + t], [x + s, y + h + s], [x - s, y + h - s], [x + wh - t, y + hh], [x - s, y + s]]).reshape(1, -1, 2)
+                        cv2.fillPoly(frame_over, p, (0, 0, 255))
             
             if blue>BLUE_CUT_GLASSES_THRESHOLD:#ブルーライトカット眼鏡検出1
 
