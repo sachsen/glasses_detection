@@ -184,10 +184,9 @@ def detectGlasses(eyes,img,img_color, eye1Pos, eye2Pos, debugImg = None):
     if eyeDistance < min(img.shape[0], img.shape[1]) / 20:
         eyeDistance = int(min(img.shape[0], img.shape[1]) / 20)
 
-    # 画像の2値化
+    # 画像のエッジを求める
+    img_2 = cv2.Canny(img, 50, 250)
 
-
-    img_2 = cv2.Canny(img, 50, 200)
     cv2.imshow("img_2",img_2)
     for (ex, ey, ew, eh) in eyes:#目の辺りを黒塗りにして差をつける
         img_2 = cv2.rectangle(img_2, (ex, ey), (ex + ew, ey + eh), (0, 0, 0), cv2.FILLED)
