@@ -87,7 +87,6 @@ def prepareDetection(img):
     img_g = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     img_3 = cv2.adaptiveThreshold(img_g, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 155, 30)
-    cv2.imshow("a", img_3)
     img_3_3 = cv2.cvtColor(img_3, cv2.COLOR_GRAY2BGR)
     img_3_3 = cv2.GaussianBlur(img_3_3, (11, 11), 12)
     img_diff = cv2.absdiff(img, img_3_3)  # 差分計算
@@ -182,7 +181,6 @@ def detectGlasses(eyes,img,img_color, eye1Pos, eye2Pos, debugImg = None):
     split_x = int(eyeCenter[0])
     img_leftFace = img[0 : img.shape[0], 0 : split_x]
     img_rightFace = img[0 : img.shape[0], split_x : img.shape[1]]
-
     # 左 半楕円マスク
     x = np.array(range(img_leftFace.shape[0]))
     x = (img_leftFace.shape[1] - img_leftFace.shape[1] * np.sqrt(1 - ((x - int(img_leftFace.shape[0]/2))/(img_leftFace.shape[0]/2))**2)).astype(np.int64)
@@ -194,7 +192,6 @@ def detectGlasses(eyes,img,img_color, eye1Pos, eye2Pos, debugImg = None):
                 c = 0
             else:
                 c += 1
-
     # 右 半楕円マスク
     x = np.array(range(img_rightFace.shape[0]))
     x = (img_rightFace.shape[1] * np.sqrt(1 - ((x - int(img_rightFace.shape[0]/2))/(img_rightFace.shape[0]/2))**2)).astype(np.int64)
@@ -210,13 +207,13 @@ def detectGlasses(eyes,img,img_color, eye1Pos, eye2Pos, debugImg = None):
     # 画像の2値化
     ret, img_leftFace_2 = cv2.threshold(img_leftFace, 0, 255, cv2.THRESH_OTSU)
     ret, img_rightFace_2 = cv2.threshold(img_rightFace, 0, 255, cv2.THRESH_OTSU)
-
+    cv2.imshow("s",img_rightFace_2)
     #　分割した画像を連結
     img_2 = cv2.hconcat([img_leftFace_2, img_rightFace_2])
-
+    cv2.imshow("img_2", img_2)
 
     img_2 = cv2.Canny(img, 50, 200)
-    cv2.imshow("img_2",img_2)
+
     for (ex, ey, ew, eh) in eyes:#目の辺りを黒塗りにして差をつける
         img_2 = cv2.rectangle(img_2, (ex, ey), (ex + ew, ey + eh), (0, 0, 0), cv2.FILLED)
 
@@ -225,7 +222,7 @@ def detectGlasses(eyes,img,img_color, eye1Pos, eye2Pos, debugImg = None):
     x3 = clip(int(eyeCenter[0] - eyeDistance/4), 0, img.shape[1])
     y3 = clip(int(eyeCenter[1] - eyeDistance ), 0, img.shape[0])
     y4 = clip(int(eyeCenter[1] + eyeDistance ), 0, img.shape[0])
-    #img_2 = cv2.rectangle(img_2, (int(img_2.shape[0]/10*4), 0), (int(img_2.shape[0]/10*6), img_2.shape[1]), (0, 0, 0), cv2.FILLED)  # 鼻の線を消したい。
+    # 鼻の線を消したい。
     img_2 = cv2.rectangle(img_2, (x3, y3), (x4, y4), (0, 0, 0), cv2.FILLED)
     cv2.imshow("img_2", img_2)
     # 目の間周辺の画像を切り出し
