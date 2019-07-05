@@ -48,7 +48,6 @@ def main():
             if (len(eyes))>= 2:
                 # 目の座標・右目距離・左目距離を計算
                 eyePoints, rightEyeDistances, leftEyeDistances = getEyePointsAndDistances(eyes, (int(w/4), int(h/4)), (int(w*3/4), int(h/4)))
-                print(eyePoints)
                 # 左右の目に最も近い目を決定
                 rightEyePos = eyePoints[rightEyeDistances.index(min(rightEyeDistances))]
                 leftEyePos = eyePoints[leftEyeDistances.index(min(leftEyeDistances))]
@@ -207,11 +206,21 @@ def detectGlasses(eyes,img,img_color, eye1Pos, eye2Pos, debugImg = None):
     # 画像の2値化
     ret, img_leftFace_2 = cv2.threshold(img_leftFace, 0, 255, cv2.THRESH_OTSU)
     ret, img_rightFace_2 = cv2.threshold(img_rightFace, 0, 255, cv2.THRESH_OTSU)
-    cv2.imshow("s",img_rightFace_2)
     #　分割した画像を連結
     img_2 = cv2.hconcat([img_leftFace_2, img_rightFace_2])
-    cv2.imshow("img_2", img_2)
+    img_2 = cv2.bitwise_not(img_2)
 
+    circle = cv2.HoughCircles(img_2, cv2.HOUGH_GRADIENT, dp=1, minDist=10, param1=200, param2=70, minRadius=10,maxRadius=3000)
+    # (,,精度(基本１),円と円の中心間の距離の最小値,,canny関係のパラメータ1,2,最小半径,最大半径)。戻り値は中心座標x,y,半径
+    img_2=cv2.cvtColor(img_2,cv2.COLOR_GRAY2BGR)
+
+    if circle is not  None:
+        for i in circle[0]:
+            print("circle!!!!!!!!!"+str(i[2]))
+            cv2.circle(img_2, (i[0], i[1]), i[2], (0, 0, 255))
+
+            cv2.imwrite("test.jpg", img_2)  # 画像保存
+    cv2.imshow("asda", img_2)
     img_2 = cv2.Canny(img, 50, 200)
 
     for (ex, ey, ew, eh) in eyes:#目の辺りを黒塗りにして差をつける
