@@ -1,6 +1,6 @@
 import numpy as np
 import cv2
-GLASSES_THRESHOLD = 5
+GLASSES_THRESHOLD = 4
 BLUE_CUT_GLASSES_THRESHOLD = 10
 BLUE_CUT_GLASSES_THRESHOLD2 = 5
 #正面を向いた時、ブルーライトの検出率が悪くなるので、２つ目を検出した時の閾値を別に用意している。
@@ -18,6 +18,15 @@ capture = cv2.VideoCapture(0)
 
 
 def main():
+    """while (True):
+        ret, frame = capture.read()
+        cv2.imshow("satuei",frame)
+        cv2.imwrite("out.jpg", frame)  # 画像保存
+        if cv2.waitKey(10) == 27:
+            break
+    capture.release()
+    cv2.destroyAllWindows()
+    """
     while (True):
         ret, frame = capture.read()
         processed=prepareDetection(frame)
@@ -184,12 +193,13 @@ def detectGlasses(eyes,img,img_color, eye1Pos, eye2Pos, debugImg = None):
         img_2 = cv2.rectangle(img_2, (ex, ey), (ex + ew, ey + eh), (0, 0, 0), cv2.FILLED)
 
     # 目の周辺を切り出し2
-    x4 = clip(int(eyeCenter[0] + eyeDistance/4), 0, img.shape[1])
-    x3 = clip(int(eyeCenter[0] - eyeDistance/4), 0, img.shape[1])
+    x4 = clip(int(eyeCenter[0] + eyeDistance/7), 0, img.shape[1])
+    x3 = clip(int(eyeCenter[0] - eyeDistance/7), 0, img.shape[1])
     y3 = clip(int(eyeCenter[1] - eyeDistance ), 0, img.shape[0])
     y4 = clip(int(eyeCenter[1] + eyeDistance ), 0, img.shape[0])
     #img_2 = cv2.rectangle(img_2, (int(img_2.shape[0]/10*4), 0), (int(img_2.shape[0]/10*6), img_2.shape[1]), (0, 0, 0), cv2.FILLED)  # 鼻の線を消したい。
     img_2 = cv2.rectangle(img_2, (x3, y3), (x4, y4), (0, 0, 0), cv2.FILLED)
+
     cv2.imshow("img_2", img_2)
     # 目の間周辺の画像を切り出し
     x2 = clip(int(eyeCenter[0] + eyeDistance), 0, img.shape[1])
@@ -219,6 +229,7 @@ def detectGlasses(eyes,img,img_color, eye1Pos, eye2Pos, debugImg = None):
 
         cv2.line(debugImg, eye1Pos, eye2Pos, (255, 0, 0), 2, cv2.LINE_AA)
         cv2.rectangle(debugImg, (x1, y1), (x2, y2), (255, 0, 0), 1)
+        cv2.imshow("fgsdfs",debugImg)
 
     if average >= GLASSES_THRESHOLD:
         return True
