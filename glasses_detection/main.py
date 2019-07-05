@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 
-GLASSES_THRESHOLD = 15
+GLASSES_THRESHOLD = 10
 HAAR_FILE = "haarcascade_frontalface_default.xml"
 HAAR_FILE2 = "haarcascade_eye.xml"
 cascade = cv2.CascadeClassifier(HAAR_FILE)
@@ -138,8 +138,8 @@ def detectGlasses(img, eye1Pos, eye2Pos, debugImg=None):
     if eyeDistance < min(img.shape[0], img.shape[1]) / 20:
         eyeDistance = int(min(img.shape[0], img.shape[1]) / 20)
 
-    # 画像の2値化
-    img_2 = cv2.Canny(img, 50, 200)
+    # 画像のエッジを求める
+    img_2 = cv2.Canny(img, 50, 250)
 
     # 目の間周辺の画像を切り出し
     x2 = clip(int(eyeCenter[0] + eyeDistance), 0, img.shape[1])
