@@ -1,8 +1,10 @@
 import numpy as np
 import cv2
+import copy
 GLASSES_THRESHOLD = 3
 BLUE_CUT_GLASSES_THRESHOLD = 10
 BLUE_CUT_GLASSES_THRESHOLD2 = 5
+DIFF=False#背景との差分でマスウを生成するかどうか。するなら最初に背景を取るために動画を流し、被写体がいないタイミングでescを押す。
 #正面を向いた時、ブルーライトの検出率が悪くなるので、２つ目を検出した時の閾値を別に用意している。
 HAAR_FILE = "haarcascade_frontalface_default.xml"
 HAAR_FILE2 = "haarcascade_eye_tree_eyeglasses.xml"
@@ -16,35 +18,41 @@ eye_cascade3 = cv2.CascadeClassifier(HAAR_FILE4)
 eye_cascade4 = cv2.CascadeClassifier(HAAR_FILE5)
 capture = cv2.VideoCapture(0)
 
-
 def main():
-    """while (True):
-        ret, frame = capture.read()
-        cv2.imshow("satuei",frame)
-        cv2.imwrite("out.jpg", frame)  # 画像保存
+
+    ret, backframe = capture.read()  # スコプを伸ばすためのの記述
+    while (DIFF):#背景画像を取得するので、被写体や動く物体はカメラから見えない所に置いてEscキー押してください。
+        ret, backframe = capture.read()
+        cv2.imshow("satuei",backframe)
         if cv2.waitKey(10) == 27:
             break
-    capture.release()
+    #capture.release()
     cv2.destroyAllWindows()
-    """
+
     while (True):
         ret, frame = capture.read()
-        processed=prepareDetection(frame)
+        processed,mask=prepareDetection(backframe,frame)
         frame=processed
+        frame_m=copy.deepcopy(frame)
+        frame_m[mask == 0] = [0, 0, 0]
         img_g = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         face = cascade.detectMultiScale(img_g)
         for (x, y, w, h) in face:
+            if DIFF:#置き換え
+                img_g = cv2.cvtColor(frame_m, cv2.COLOR_BGR2GRAY)
             frame = cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 1)
             img_eye_gray = img_g[y:y + h, x:x + w]
             img_eye = frame[y:y + h, x:x + w]
             img_upper_face=frame[y+int(h/4):y + int(h/2), x+int(w/11*2):x + int(w/11*9)]
             blue= detectBluelightCutGlasses(img_upper_face,frame,10,10)
             #print(blue)
+
+            #以下cascade祭り
             eyes = eye_cascade.detectMultiScale(img_eye_gray)
             eyes2 = eye_cascade2.detectMultiScale(img_eye_gray)
             eyes3 = eye_cascade3.detectMultiScale(img_eye_gray)
             eyes4 = eye_cascade4.detectMultiScale(img_eye_gray)
-
+            #それぞれの検出した目をeyesに集積
             if(len(eyes)>0 and len(eyes2)>0):
                 eyes = np.vstack((eyes, eyes2))
             if (len(eyes) > 0 and len(eyes3) > 0):
@@ -76,7 +84,7 @@ def main():
                     cv2.putText(img_eye, "GLASSES", (0, h), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
                 else:
                     cv2.putText(img_eye, "NOT GLASSES", (0, h), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
-            if blue>BLUE_CUT_GLASSES_THRESHOLD:
+            if blue>BLUE_CUT_GLASSES_THRESHOLD:#ブルーライトカット眼鏡検出1
 
                 cv2.putText(img_upper_face, "Bluelight Cut Glasses", (0, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
             for (ex, ey, ew, eh) in eyes:
@@ -89,11 +97,11 @@ def main():
     capture.release()
     cv2.destroyAllWindows()
 
-def prepareDetection(img):
+def prepareDetection(bgimg,img):
+    if(img is not None):
+        framemask=backgroundMask(bgimg,img)
     img_g = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
     img_3 = cv2.adaptiveThreshold(img_g, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 155, 30)
-    cv2.imshow("a", img_3)
     img_3_3 = cv2.cvtColor(img_3, cv2.COLOR_GRAY2BGR)
     img_3_3 = cv2.GaussianBlur(img_3_3, (11, 11), 12)
     img_diff = cv2.absdiff(img, img_3_3)  # 差分計算
@@ -103,17 +111,17 @@ def prepareDetection(img):
     img = cv2.addWeighted(img, 0.95, img_diff, 0.05, 3)  # 画像合成
     # img=cv2.add(img,img_diff)
 
-    return  img
+    return  img,framemask
 def detectBluelightCutGlasses(img,img_face,s,v):#svはhsvのsv
     # 青い眼鏡、青い髪、青い入れ墨等は誤認識します。
     #青色の範囲をHSVで指定して収集(frame_mask)
-
+    #全体に青みがかってる場合の調整値を求める
     img_face = cv2.cvtColor(img_face, cv2.COLOR_BGR2HSV)
     lower = np.array([75, s, v])
     upper = np.array([135, 100, 100])
     frame_mask2 = cv2.inRange(img_face, lower, upper)
     average2 = np.mean(frame_mask2)
-
+    #調整ありきで目の周辺の青色取得
     img=cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
     lower = np.array([75, s+int(average2), v+int(average2)])
     upper = np.array([135, 100, 100])
@@ -182,7 +190,6 @@ def detectGlasses(eyes,img,img_color, eye1Pos, eye2Pos, debugImg = None):
     frame_mask = cv2.GaussianBlur(frame_mask, (21, 21), 12)
     frame_mask=cv2.cvtColor(frame_mask,cv2.COLOR_GRAY2BGR)
     img_color=cv2.addWeighted(img_color,0.9,frame_mask,0.1,3)
-    cv2.imshow("frame_mask",img_color)
     # 目の中心座標の計算
     eyeCenter = ((eye1Pos[0] + eye2Pos[0]) / 2, (eye1Pos[1] + eye2Pos[1]) / 2)
 
@@ -194,7 +201,6 @@ def detectGlasses(eyes,img,img_color, eye1Pos, eye2Pos, debugImg = None):
     # 画像のエッジを求める
     img_2 = cv2.Canny(img, 50, 250)
 
-    cv2.imshow("img_2",img_2)
     for (ex, ey, ew, eh) in eyes:#目の辺りを黒塗りにして差をつける
         img_2 = cv2.rectangle(img_2, (ex, ey), (ex + ew, ey + eh), (0, 0, 0), cv2.FILLED)
 
@@ -235,14 +241,26 @@ def detectGlasses(eyes,img,img_color, eye1Pos, eye2Pos, debugImg = None):
 
         cv2.line(debugImg, eye1Pos, eye2Pos, (255, 0, 0), 2, cv2.LINE_AA)
         cv2.rectangle(debugImg, (x1, y1), (x2, y2), (255, 0, 0), 1)
-        cv2.imshow("fgsdfs",debugImg)
 
     if average >= GLASSES_THRESHOLD:
         return True
     else:
         return False
 
+def backgroundMask(bgimg,img):#マスクを作る
+    img_diff = cv2.absdiff(bgimg, img)#背景との差分
+    img_diff = cv2.GaussianBlur(img_diff, (51, 51), 12)#ノイズ除去
+    img_diff=cv2.cvtColor(img_diff,cv2.COLOR_BGR2GRAY)
+    et, img_diff = cv2.threshold(img_diff, 20, 255, cv2.THRESH_BINARY)#二値化
+    kernel = np.ones((3, 3), dtype=np.uint8)
+    for i in range(10):#黒い穴を埋める
+        img_diff = cv2.dilate(img_diff, kernel)  # 白が膨張
+        img_diff = cv2.erode(img_diff, kernel)  # 黒が膨張
 
+    img_diff = cv2.morphologyEx(img_diff, cv2.MORPH_CLOSE, kernel)  # モルフォロジー。第二で方式を選択。
+    if DIFF:
+        cv2.imshow("img_diff",img_diff)
+    return img_diff
 
 if __name__ == '__main__':
     main()
