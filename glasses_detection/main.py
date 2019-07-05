@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 
-GLASSES_THRESHOLD = 10
+GLASSES_THRESHOLD = 11
 HAAR_FILE = "haarcascade_frontalface_default.xml"
 HAAR_FILE2 = "haarcascade_eye.xml"
 cascade = cv2.CascadeClassifier(HAAR_FILE)
@@ -80,14 +80,14 @@ def main():
 
 def getEyePointsAndDistances(eyes, rightEyePos, LeftEyePos):
     """
-    目の座標・右目距離・左目距離を返す。
+		目の座標・右目距離・左目距離を返す。
 
-    eyes : 目の座標のタプル
-    rightEyePos : 右目の座標
-    LeftEyePos : 左目の座標
+		eyes : 目の座標のタプル
+		rightEyePos : 右目の座標
+		LeftEyePos : 左目の座標
 
-    return 目の座標・右目距離・左目距離（それぞれがリスト）
-    """
+		return 目の座標・右目距離・左目距離（それぞれがリスト）
+		"""
     points = []
     rightEyeDistances = []
     leftEyeDistances = []
@@ -101,17 +101,17 @@ def getEyePointsAndDistances(eyes, rightEyePos, LeftEyePos):
 
 def getDistance2(p1, p2):
     """
-    2点間の距離の2乗を計算する。
+		2点間の距離の2乗を計算する。
 
-    p1, p2 : 点の座標のタプル (x, y)
-    """
+		p1, p2 : 点の座標のタプル (x, y)
+		"""
     return ((p1[0] - p2[0])**2) + ((p1[1] - p2[1])**2)
 
 
 def clip(x, min, max):
     """
-    xをmin以上max以下の値にする。
-    """
+		xをmin以上max以下の値にする。
+		"""
     if x <= min:
         return min
     if x >= max:
@@ -121,14 +121,14 @@ def clip(x, min, max):
 
 def detectGlasses(img, eye1Pos, eye2Pos, debugImg=None):
     """
-    めがねが存在するか判定する。
+		めがねが存在するか判定する。
 
-    img : 顔画像（グレースケール）
-    eyeXPos : X個目の目の座標のタプル (x, y)
-    debugImg : デバッグ情報を書く画像（省略可）
+		img : 顔画像（グレースケール）
+		eyeXPos : X個目の目の座標のタプル (x, y)
+		debugImg : デバッグ情報を書く画像（省略可）
 
-    return True / False
-    """
+		return True / False
+		"""
 
     # 目の中心座標の計算
     eyeCenter = ((eye1Pos[0] + eye2Pos[0]) / 2, (eye1Pos[1] + eye2Pos[1]) / 2)
@@ -138,8 +138,10 @@ def detectGlasses(img, eye1Pos, eye2Pos, debugImg=None):
     if eyeDistance < min(img.shape[0], img.shape[1]) / 20:
         eyeDistance = int(min(img.shape[0], img.shape[1]) / 20)
 
+    # 画像の明るさを正規化
+    img = ((img - np.mean(img)) / np.std(img) * 64 + 128).astype(np.uint8)
     # 画像のエッジを求める
-    img_2 = cv2.Canny(img, 50, 250)
+    img_2 = cv2.Canny(img, 0, 255)
 
     # 目の間周辺の画像を切り出し
     x2 = clip(int(eyeCenter[0] + eyeDistance), 0, img.shape[1])
