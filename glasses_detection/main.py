@@ -37,6 +37,10 @@ def main():
         frame_m[mask == 0] = [0, 0, 0]
         img_g = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         face = cascade.detectMultiScale(img_g)
+
+        # めがね判定オーバーレイ表示用画像
+        frame_over = np.zeros(frame.shape, dtype = np.uint8)
+
         for (x, y, w, h) in face:
             if DIFF:#置き換え
                 img_g = cv2.cvtColor(frame_m, cv2.COLOR_BGR2GRAY)
@@ -69,29 +73,26 @@ def main():
 
             # 
             if (0 <= rightEyePos[0] < w/2) and (0 <= rightEyePos[1] < h/2) and (w/2 <= leftEyePos[0] < w) and (0 <= leftEyePos[1] < h/2):
-                # 同じ目を指していたら
-                #if rightEyePos is leftEyePos:
-                #    # 既存の最小距離を最大距離に変更
-                #    maxDistance = max(max(rightEyeDistances), max(leftEyeDistances))
-                #    rightEyeDistances[eyePoints.index(rightEyePos)] += maxDistance
-                #    leftEyeDistances[eyePoints.index(leftEyePos)] += maxDistance
-                #
-                #    # 片目ごとに2番目に距離の短い目に置き換え、その合計距離の短い方を選択
-                #    if (rightEyeDistances[eyePoints.index(rightEyePos)] + min(leftEyeDistances)) < (leftEyeDistances[eyePoints.index(leftEyePos)] + min(rightEyeDistances)):
-                #        leftEyePos = eyePoints[leftEyeDistances.index(min(leftEyeDistances))]
-                #    else:
-                #        rightEyePos = eyePoints[rightEyeDistances.index(min(rightEyeDistances))]
-
                 # めがね検出
                 if detectGlasses(eyes,img_eye_gray,img_eye, rightEyePos, leftEyePos, img_eye):
-                    cv2.putText(img_eye, "GLASSES", (0, h), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
+                    #cv2.putText(img_eye, "GLASSES", (0, h), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
+                    cv2.circle(frame_over, (int(x + w/2), int(y + h/2)), int(0.35*(w+h)), (0, 255, 0), thickness = int(0.05*(w+h)), lineType = cv2.LINE_AA)
                 else:
-                    cv2.putText(img_eye, "NOT GLASSES", (0, h), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
+                    #cv2.putText(img_eye, "NOT GLASSES", (0, h), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
+                    s = int(0.03 * (w + h))
+                    t = s * 2
+                    wh = int(w/2)
+                    hh = int(h/2)
+                    p = np.array([[x + s, y - s], [x + wh, y + hh - t], [x + w - s, y - s], [x + w + s, y + s], [x + wh + t, y + hh], [x + w + s, y + h - s], [x + w - s, y + h + s], [x + wh, y + hh + t], [x + s, y + h + s], [x - s, y + h - s], [x + wh - t, y + hh], [x - s, y + s]]).reshape(1, -1, 2)
+                    cv2.fillPoly(frame_over, p, (0, 0, 255))
+            
             if blue>BLUE_CUT_GLASSES_THRESHOLD:#ブルーライトカット眼鏡検出1
 
                 cv2.putText(img_upper_face, "Bluelight Cut Glasses", (0, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
             for (ex, ey, ew, eh) in eyes:
                 cv2.rectangle(img_eye, (ex, ey), (ex + ew, ey + eh), (0, 255, 0), 1)
+            # めがね判定オーバーレイ表示用画像重ね合わせ
+            frame = np.clip((frame + 0.9 * frame_over), 0, 255).astype(np.uint8)
 
         cv2.imshow('frame',frame)
         if cv2.waitKey(10) == 27:
