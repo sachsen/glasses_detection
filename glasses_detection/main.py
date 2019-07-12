@@ -4,7 +4,7 @@ import copy
 GLASSES_THRESHOLD = 3
 BLUE_CUT_GLASSES_THRESHOLD = 10
 BLUE_CUT_GLASSES_THRESHOLD2 = 5
-DIFF=False#背景との差分でマスウを生成するかどうか。するなら最初に背景を取るために動画を流し、被写体がいないタイミングでescを押す。
+DIFF=True#背景との差分でマスウを生成するかどうか。するなら最初に背景を取るために動画を流し、被写体がいないタイミングでescを押す。
 #正面を向いた時、ブルーライトの検出率が悪くなるので、２つ目を検出した時の閾値を別に用意している。
 HAAR_FILE = "haarcascade_frontalface_default.xml"
 HAAR_FILE2 = "haarcascade_eye_tree_eyeglasses.xml"
@@ -74,7 +74,7 @@ def main():
                 #
                 if (0 <= rightEyePos[0] < w/2) and (0 <= rightEyePos[1] < h/2) and (w/2 <= leftEyePos[0] < w) and (0 <= leftEyePos[1] < h/2):
                     # めがね検出
-                    if detectGlasses(eyes,img_eye_gray,img_eye, rightEyePos, leftEyePos, img_eye):
+                    if not detectGlasses(eyes,img_eye_gray,img_eye, rightEyePos, leftEyePos, img_eye):
                         #cv2.putText(img_eye, "GLASSES", (0, h), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
                         cv2.circle(frame_over, (int(x + w/2), int(y + h/2)), int(0.35*(w+h)), (0, 255, 0), thickness = int(0.05*(w+h)), lineType = cv2.LINE_AA)
                     else:
