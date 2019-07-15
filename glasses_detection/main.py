@@ -4,7 +4,7 @@ import copy
 GLASSES_THRESHOLD = 3
 BLUE_CUT_GLASSES_THRESHOLD = 10
 BLUE_CUT_GLASSES_THRESHOLD2 = 5
-DIFF=True#背景との差分でマスウを生成するかどうか。するなら最初に背景を取るために動画を流し、被写体がいないタイミングでescを押す。
+DIFF=False#背景との差分でマスウを生成するかどうか。するなら最初に背景を取るために動画を流し、被写体がいないタイミングでescを押す。
 #正面を向いた時、ブルーライトの検出率が悪くなるので、２つ目を検出した時の閾値を別に用意している。
 HAAR_FILE = "haarcascade_frontalface_default.xml"
 HAAR_FILE2 = "haarcascade_eye_tree_eyeglasses.xml"
